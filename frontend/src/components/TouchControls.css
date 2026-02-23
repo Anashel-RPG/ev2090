@@ -1,0 +1,50 @@
+/* ─── Touch Controls ─── */
+
+.touch-controls {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
+  pointer-events: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 16px 16px 16px;
+}
+
+.touch-group {
+  display: flex;
+  pointer-events: auto;
+  gap: 8px;
+}
+
+.touch-left {
+  flex-direction: column;
+}
+
+.touch-right {
+  flex-direction: row;
+}
+
+.touch-btn {
+  width: 58px;
+  height: 58px;
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 4px;
+  color: var(--accent-green);
+  font-size: 20px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-btn:active {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: rgba(0, 255, 136, 0.6);
+}

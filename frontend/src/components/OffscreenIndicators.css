@@ -1,0 +1,40 @@
+/* ─── Off-screen Indicators ─── */
+
+.offscreen-indicators {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.offscreen-indicator {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: rgba(68, 136, 255, 0.7);
+  text-shadow: 0 0 4px rgba(68, 136, 255, 0.3);
+}
+
+.offscreen-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(68, 136, 255, 0.8);
+  box-shadow: 0 0 6px rgba(68, 136, 255, 0.4);
+}
+
+/* Ship indicators — green to distinguish from planet blue */
+.offscreen-indicator.ship-indicator {
+  color: rgba(0, 255, 136, 0.6);
+  text-shadow: 0 0 4px rgba(0, 255, 136, 0.2);
+}
+
+.offscreen-indicator.ship-indicator .offscreen-dot {
+  background: rgba(0, 255, 136, 0.7);
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+}

@@ -1,0 +1,141 @@
+/* ─── Chat Panel ─── */
+
+.chat-panel {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  z-index: 20;
+  width: 380px;
+  max-height: 420px;
+  background: rgba(8, 8, 16, 0.85);
+  border: 1px solid var(--border-dim);
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(4px);
+  opacity: 0.2;
+  transition: opacity 0.8s ease;
+}
+
+.chat-panel:hover,
+.chat-panel:focus-within {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Keep COMMS fully visible for the first 10 seconds */
+.chat-panel.chat-fresh {
+  opacity: 1;
+}
+
+.chat-panel.chat-minimized {
+  max-height: none;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.chat-title {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.chat-status {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.chat-online {
+  background: var(--accent-green);
+  box-shadow: 0 0 4px rgba(0, 255, 136, 0.5);
+}
+
+.chat-offline {
+  background: var(--accent-red, #ff4444);
+}
+
+.chat-toggle {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.chat-toggle:hover {
+  color: var(--text-primary);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 10px;
+  min-height: 140px;
+  max-height: 340px;
+}
+
+.chat-empty {
+  text-align: center;
+  padding: 20px 0;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.chat-msg {
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.chat-nick {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
+.chat-text {
+  color: var(--text-primary);
+}
+
+.chat-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.chat-prompt {
+  color: var(--accent-green);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  padding: 2px 0;
+}
+
+.chat-input::placeholder {
+  color: var(--text-dim);
+  opacity: 0.5;
+}

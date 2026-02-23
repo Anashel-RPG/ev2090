@@ -1,0 +1,83 @@
+/* ═══════════════════════════════════════════
+   iPad / Large Tablet — 768px to 1023px
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+
+  .sidebar::before {
+    width: var(--sidebar-width);
+  }
+
+  .chat-panel {
+    width: 280px;
+  }
+
+  .ship-list {
+    max-height: 160px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Mobile — under 768px
+   Full touch mode: hamburger, mini radar,
+   touch controls, full-screen ship modal.
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  .hud-controls {
+    display: none;
+  }
+
+  .fps-counter {
+    display: none;
+  }
+
+  /* Toggle at top-left */
+  .sidebar-toggle {
+    display: flex;
+    left: 10px;
+    right: auto;
+  }
+
+  /* Mini radar at top-right */
+  .hud-mini-radar {
+    display: block;
+    top: 10px;
+  }
+
+  .touch-controls {
+    display: flex;
+  }
+
+  .debug-panel {
+    display: none !important;
+  }
+
+  /* Hide chat, nickname, and jump-back */
+  .chat-panel,
+  .nickname-editor,
+  .hud-jump-btn {
+    display: none !important;
+  }
+
+  /* Smaller touch buttons + circular thrust */
+  .touch-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .touch-thrust {
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+}

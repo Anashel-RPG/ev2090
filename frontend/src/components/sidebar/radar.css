@@ -1,0 +1,27 @@
+/* Radar */
+
+.radar-container {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+}
+
+/* ─── Radar Ping Animation ─── */
+
+@keyframes radar-ping {
+  0% {
+    r: 2.5;
+    opacity: 0.6;
+    stroke-width: 1;
+  }
+  100% {
+    r: 7;
+    opacity: 0;
+    stroke-width: 0.3;
+  }
+}
+
+.radar-ping {
+  animation: radar-ping 1.2s ease-out infinite;
+}

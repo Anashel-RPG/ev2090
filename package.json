@@ -1,0 +1,14 @@
+{
+  "name": "escape-velocity",
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n frontend,api -c blue,magenta \"npm --prefix frontend run dev\" \"npm --prefix worker run dev\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:api": "npm --prefix worker run dev",
+    "deploy": "npm --prefix frontend run build && npm --prefix frontend run deploy",
+    "deploy:api": "npm --prefix worker run deploy"
+  }
+}

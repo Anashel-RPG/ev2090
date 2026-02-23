@@ -1,0 +1,282 @@
+/* Sidebar — fixed overlay with glass effect.
+   backdrop-filter lives on ::before at z-index:0 so it can sample the canvas.
+   overflow-y is on the inner .sidebar-scroll wrapper — putting it on the
+   sidebar itself (or on the ::before layer) kills the compositor in Chrome. */
+
+.sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 10;
+  width: var(--sidebar-width);
+  height: 100vh;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  /* overflow is intentionally on .sidebar-scroll, NOT here */
+}
+
+/* Glass blur layer — z-index:0 (not -1) so backdrop-filter samples the canvas */
+.sidebar::before {
+  content: "";
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: rgba(8, 8, 16, var(--sidebar-bg-opacity, 0.60));
+  backdrop-filter: blur(var(--sidebar-blur, 40px));
+  -webkit-backdrop-filter: blur(var(--sidebar-blur, 40px));
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Scrollable content layer — sits above the ::before glass */
+.sidebar-scroll {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-dim);
+  text-align: center;
+}
+
+.logo-text {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent-green);
+  text-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+}
+
+/* Panels */
+
+.panel {
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.panel-header {
+  padding: 8px 14px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.panel-body {
+  padding: 10px 14px;
+}
+
+/* Status Bars */
+
+.status-bar {
+  margin-bottom: 6px;
+}
+
+.status-bar-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.status-bar-value {
+  color: var(--text-primary);
+}
+
+.status-bar-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.status-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.15s ease-out;
+}
+
+/* Status Info Rows */
+
+.status-info {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.status-row .label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.status-row .value {
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.status-row .value.accent {
+  color: var(--accent-green);
+}
+
+.status-row .value.accent-blue {
+  color: var(--accent-blue);
+}
+
+/* Target Panel */
+
+.target-bars {
+  margin-top: 8px;
+}
+
+.no-target {
+  text-align: center;
+  padding: 16px 0;
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+/* Sidebar Footer */
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fps-counter {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+/* ─── Ship Selector ─── */
+
+.ship-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.ship-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 12px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: var(--font-mono);
+  text-align: left;
+}
+
+.ship-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ship-item:focus {
+  outline: none;
+}
+
+.ship-item:focus-visible {
+  outline: none;
+}
+
+.ship-item.active {
+  border-left-color: var(--accent-green);
+  background: rgba(0, 255, 136, 0.04);
+}
+
+.ship-item .ship-name {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+}
+
+.ship-item.active .ship-name {
+  color: var(--accent-green);
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+}
+
+.ship-item .ship-class {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+/* Sidebar boot animation */
+.sidebar-boot-wrapper {
+  /* always visible */
+}
+.sidebar-boot-wrapper.sidebar-booting {
+  /* No "forwards" — filter must not persist after animation ends.
+     A lingering filter (even brightness(1) saturate(1)) creates a stacking context
+     that breaks position:fixed on ::before and kills backdrop-filter. */
+  animation: sidebar-boot 0.8s ease-out;
+}
+
+@keyframes sidebar-boot {
+  0% {
+    filter: brightness(3) saturate(0);
+  }
+  30% {
+    filter: brightness(2) saturate(0.2);
+  }
+  60% {
+    filter: brightness(1.3) saturate(0.7);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* ─── Sidebar Toggle Button ─── */
+
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 25;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 16, 0.8);
+  border: 1px solid var(--border-dim);
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 4px;
+}
+
+.sidebar-toggle:hover {
+  border-color: rgba(0, 255, 136, 0.3);
+}

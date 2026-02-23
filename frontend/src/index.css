@@ -1,0 +1,49 @@
+/* Escape Velocity - Global Styles */
+
+:root {
+  --bg-deep: #05050a;
+  --bg-panel: #0c0c14;
+  --bg-panel-hover: #12121c;
+  --border-dim: #1a1a2a;
+  --border-active: #2a3a4a;
+
+  --accent-green: #00ff88;
+  --accent-blue: #4488ff;
+  --accent-orange: #ff8844;
+  --accent-red: #ff4444;
+
+  --text-primary: #c0c0d0;
+  --text-dim: #606070;
+  --text-bright: #e0e0f0;
+
+  --sidebar-width: 240px;
+  --sidebar-bg-opacity: 0.60;
+  --sidebar-blur: 40px;
+  --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Prevent text selection during gameplay */
+.game-container {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}

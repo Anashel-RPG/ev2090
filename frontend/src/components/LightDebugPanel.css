@@ -1,0 +1,237 @@
+/* ─── Light Debug Panel ─── */
+
+.debug-panel {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  width: 320px;
+  max-height: calc(100vh - 20px);
+  background: rgba(8, 8, 16, 0.95);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent-green);
+}
+
+.debug-header-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.debug-copy {
+  padding: 3px 8px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.debug-copy:hover {
+  background: rgba(0, 255, 136, 0.2);
+}
+
+.debug-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.debug-close:hover {
+  color: var(--accent-red);
+}
+
+.debug-scroll {
+  overflow-y: auto;
+  padding: 4px 0;
+  max-height: calc(100vh - 60px);
+}
+
+.debug-group-label {
+  padding: 6px 12px 2px;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: 2px;
+}
+
+.debug-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px;
+}
+
+.debug-slider-label {
+  width: 55px;
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.debug-slider {
+  flex: 1;
+  height: 3px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  border-radius: 2px;
+}
+
+.debug-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 255, 136, 0.4);
+}
+
+.debug-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  cursor: pointer;
+  border: none;
+}
+
+.debug-slider-value {
+  width: 40px;
+  text-align: right;
+  font-size: 9px;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.debug-color-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+}
+
+.debug-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.debug-color-swatch:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.debug-color-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+/* Debug tool buttons */
+.debug-button-row {
+  display: flex;
+  gap: 4px;
+  padding: 3px 12px;
+}
+
+.debug-action-btn {
+  flex: 1;
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.debug-action-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.debug-action-btn.active {
+  background: rgba(255, 80, 80, 0.2);
+  border-color: rgba(255, 80, 80, 0.5);
+  color: #ff6666;
+}
+
+.debug-view-btn {
+  flex: 1;
+  padding: 4px 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.debug-view-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.debug-view-btn.active {
+  background: rgba(100, 180, 255, 0.15);
+  border-color: rgba(100, 180, 255, 0.5);
+  color: #88ccff;
+}
+
+/* FPS display in header */
+.debug-fps {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+/* Sub-labels inside collapsed sections (e.g. AMBIENT, KEY LIGHT within LIGHTING) */
+.debug-group-sublabel {
+  padding: 4px 12px 1px;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.25);
+  margin-top: 2px;
+}
