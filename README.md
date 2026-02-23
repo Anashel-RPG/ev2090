@@ -1,5 +1,7 @@
 # EV · 2090
 
+LIVE DEMO: https://ev2090.com/
+
 A 3D space simulation game built with React and Three.js, deployed on Cloudflare.
 
 > **Read-only repository.** This is the first public release of EV · 2090. I'm still figuring out the best workflow for collaborating with other developers without spending all my time managing PRs and maintaining two parallel codebases (the MMO branch I actively build on vs. a contributor-friendly fork). For now, **treat this repo as read-only** — explore it, learn from it, and use it as a starting point for your own multiplayer engine, single-player variant, or backend experiments. When I've sorted out a contribution workflow that doesn't slow down development, I'll open things up. Stay tuned.
