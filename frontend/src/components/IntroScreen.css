@@ -1,0 +1,446 @@
+/* ═══════════════════════════════════════════════════
+   Intro Screen — Ship Carousel + Controls
+   Matches sidebar panel aesthetic (glass / dark)
+   ═══════════════════════════════════════════════════ */
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: intro-fade-in 0.8s ease forwards;
+}
+
+@keyframes intro-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Splash background image */
+.intro-bg {
+  position: absolute;
+  inset: 0;
+  background: url("https://cdn.ev2090.com/images/splash.jpg") center / cover no-repeat;
+  filter: brightness(0.25) saturate(0.6);
+}
+
+/* Glass panel — matches sidebar aesthetic */
+.intro-container {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 680px;
+  min-height: min(520px, 85vh);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: rgba(8, 8, 16, 0.75);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono, "Courier New", monospace);
+  color: var(--text-primary, #c0c0d0);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Header ─── */
+
+.intro-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-dim, #1a1a2a);
+  flex-shrink: 0;
+}
+
+.intro-logo {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent-green, #00ff88);
+  text-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+}
+
+.intro-subtitle {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim, #606070);
+}
+
+/* ─── Body (consistent height between steps) ─── */
+
+.intro-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ─── Carousel ─── */
+
+.intro-carousel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+}
+
+.intro-arrow {
+  flex-shrink: 0;
+  width: 36px;
+  height: 56px;
+  background: transparent;
+  border: 1px solid var(--border-dim, #1a1a2a);
+  color: var(--text-dim, #606070);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.intro-arrow:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(0, 255, 136, 0.3);
+  color: var(--accent-green, #00ff88);
+}
+
+/* Ship display: preview left, info top-aligned right */
+.intro-ship-display {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+/* ─── 3D Preview ─── */
+
+.intro-preview-wrap {
+  position: relative;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-dim, #1a1a2a);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.intro-preview-canvas {
+  display: block;
+}
+
+.intro-preview-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 136, 0.015) 2px,
+    rgba(0, 255, 136, 0.015) 4px
+  );
+  mix-blend-mode: screen;
+}
+
+/* ─── Ship Info (top-left) ─── */
+
+.intro-ship-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.intro-ship-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-bright, #e0e0f0);
+}
+
+.intro-ship-class {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--accent-green, #00ff88);
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+  margin-top: -4px;
+}
+
+/* ─── Lore ─── */
+
+.intro-ship-lore {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-dim, #606070);
+  font-style: italic;
+  margin-top: -2px;
+}
+
+/* ─── Stat Bars (CSS-based) ─── */
+
+.intro-ship-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.intro-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+}
+
+.intro-stat-label {
+  width: 26px;
+  color: var(--text-dim, #606070);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.intro-stat-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.intro-stat-fill {
+  height: 100%;
+  background: var(--accent-green, #00ff88);
+  opacity: 0.6;
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+
+.intro-stat-val {
+  width: 22px;
+  text-align: right;
+  color: var(--text-primary, #c0c0d0);
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+/* ─── Counter ─── */
+
+.intro-counter {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim, #606070);
+  padding-bottom: 4px;
+}
+
+/* ─── Hangar hint ─── */
+
+.intro-hangar-hint {
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--text-dim, #606070);
+  opacity: 0.6;
+  padding-bottom: 2px;
+}
+
+/* ─── Footer / Launch Button ─── */
+
+.intro-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-dim, #1a1a2a);
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.intro-launch-btn {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 24px;
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: var(--accent-green, #00ff88);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.intro-launch-btn:hover {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.5);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+}
+
+/* ─── Controls Step ─── */
+
+.intro-controls {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.intro-keys-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.intro-keys-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim, #606070);
+  margin-bottom: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.intro-keys-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intro-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  border: 1px solid var(--border-dim, #1a1a2a);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary, #c0c0d0);
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-align: center;
+  border-radius: 2px;
+}
+
+.intro-key-desc {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim, #606070);
+  margin-left: 8px;
+}
+
+.intro-controls-tip {
+  font-size: 11px;
+  color: var(--text-dim, #606070);
+  text-align: center;
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+/* ─── Mobile portrait: full viewport, stacked & centered ─── */
+
+.intro-mobile {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  max-height: 100vh;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+}
+
+.intro-mobile .intro-carousel {
+  padding: 12px 4px;
+}
+
+.intro-mobile .intro-ship-display {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.intro-mobile .intro-preview-wrap {
+  align-self: center;
+}
+
+.intro-mobile .intro-preview-canvas {
+  width: 200px;
+  height: 155px;
+}
+
+.intro-mobile .intro-ship-info {
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.intro-mobile .intro-ship-stats {
+  width: 80%;
+  max-width: 280px;
+}
+
+.intro-mobile .intro-launch-btn {
+  max-width: none;
+  font-size: 14px;
+  padding: 14px;
+}
+
+.intro-mobile .intro-arrow {
+  width: 32px;
+  height: 48px;
+}
+
+/* ─── Mobile landscape: horizontal layout like desktop ─── */
+
+@media (max-width: 767px) and (orientation: landscape) {
+  .intro-mobile {
+    min-height: 100vh;
+  }
+
+  .intro-mobile .intro-ship-display {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .intro-mobile .intro-preview-canvas {
+    width: 180px;
+    height: 140px;
+  }
+
+  .intro-mobile .intro-ship-info {
+    align-items: flex-start;
+    text-align: left;
+    width: auto;
+    padding: 0;
+  }
+
+  .intro-mobile .intro-ship-stats {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* ─── Scrollbar ─── */
+
+.intro-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.intro-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.intro-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+}

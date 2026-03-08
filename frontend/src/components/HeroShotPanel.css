@@ -1,0 +1,101 @@
+/* ─── Hero Shot Authoring Panel ─── */
+
+.hero-panel {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  width: 320px;
+  max-height: calc(100vh - 20px);
+  background: rgba(8, 8, 16, 0.95);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+.hero-panel .debug-header {
+  border-bottom-color: rgba(100, 180, 255, 0.2);
+  color: #88ccff;
+}
+
+.hero-panel .debug-copy {
+  background: rgba(100, 180, 255, 0.1);
+  border-color: rgba(100, 180, 255, 0.3);
+  color: #88ccff;
+}
+
+.hero-panel .debug-copy:hover {
+  background: rgba(100, 180, 255, 0.2);
+}
+
+/* Active subject button */
+.hero-active {
+  background: rgba(100, 180, 255, 0.2) !important;
+  border-color: rgba(100, 180, 255, 0.5) !important;
+  color: #88ccff !important;
+}
+
+.hero-planet-row {
+  flex-wrap: wrap;
+}
+
+.hero-hint {
+  padding: 6px 12px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+/* Mouse control instructions bar */
+.hero-controls-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-size: 9px;
+  color: rgba(100, 180, 255, 0.6);
+  border-bottom: 1px solid rgba(100, 180, 255, 0.1);
+  letter-spacing: 0.3px;
+}
+
+.hero-hint-sep {
+  color: rgba(100, 180, 255, 0.25);
+  margin: 0 2px;
+}
+
+/* Ship rotate toggle button */
+.hero-rotate-toggle {
+  width: 100%;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+/* Disabled subject buttons during animation */
+.hero-panel .debug-action-btn:disabled,
+.hero-panel .debug-view-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── Letterbox Cinematic Bars ─── */
+.hero-letterbox-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  background: black;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.hero-letterbox-top {
+  top: 0;
+}
+
+.hero-letterbox-bottom {
+  bottom: 0;
+}

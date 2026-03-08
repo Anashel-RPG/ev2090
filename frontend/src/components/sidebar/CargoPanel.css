@@ -1,0 +1,228 @@
+/* CargoPanel — sidebar cargo/credits display with expandable manifest */
+
+.cargo-panel-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cargo-panel-toggle:hover .cargo-chevron {
+  color: var(--accent-green);
+}
+
+.cargo-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.cargo-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cargo-amount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.cargo-pct {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+}
+
+.cargo-chevron {
+  font-size: 9px;
+  color: var(--text-dim);
+  transition: color 0.15s;
+}
+
+/* Tiny cargo fill bar */
+.cargo-bar-track {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 0 2px;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.cargo-bar-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.cargo-bar-fill.bar-green  { background: var(--accent-green); }
+.cargo-bar-fill.bar-yellow { background: #f0b429; }
+.cargo-bar-fill.bar-red    { background: #ff4466; }
+
+/* Expanded manifest */
+.cargo-manifest {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.cargo-manifest.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.cargo-manifest.expanded {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.cargo-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 6px 0;
+}
+
+.cargo-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.cargo-item-icon {
+  font-size: 10px;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.cargo-item-name {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cargo-item-qty {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.cargo-item-value {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--accent-green);
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 52px;
+}
+
+/* Summary rows */
+.cargo-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.cargo-summary-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cargo-summary-value {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-primary);
+}
+
+.cargo-summary-value.positive { color: var(--accent-green); }
+.cargo-summary-value.negative { color: #ff4466; }
+
+/* Transaction ledger */
+.cargo-ledger-toggle {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.cargo-ledger-toggle:hover {
+  color: var(--accent-green);
+}
+
+.cargo-tx-row {
+  display: flex;
+  gap: 4px;
+  padding: 1px 0;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.03em;
+}
+
+.cargo-tx-time {
+  color: var(--text-dim);
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.cargo-tx-action {
+  width: 28px;
+  flex-shrink: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cargo-tx-action.buy  { color: #ff4466; }
+.cargo-tx-action.sell { color: var(--accent-green); }
+
+.cargo-tx-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.cargo-tx-amount {
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 44px;
+}
+
+.cargo-tx-amount.buy  { color: #ff4466; }
+.cargo-tx-amount.sell { color: var(--accent-green); }
+
+/* Empty state */
+.cargo-empty {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 6px 0;
+  opacity: 0.5;
+}

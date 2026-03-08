@@ -4,9 +4,10 @@ import "./OffscreenIndicators.css";
 
 interface Props {
   shipPosition: Vec2;
-  shipRotation: number;
+  shipHeading: number;
   contacts: RadarContact[];
   sidebarWidth?: number;
+  questTargetName?: string;
 }
 
 const VIEW_SIZE = 40; // must match CameraController viewSize
@@ -29,7 +30,7 @@ function isInScannerCone(
   return Math.abs(diff) < SCANNER_HALF_ANGLE;
 }
 
-export function OffscreenIndicators({ shipPosition, shipRotation, contacts, sidebarWidth = 240 }: Props) {
+export function OffscreenIndicators({ shipPosition, shipHeading: physicsHeading, contacts, sidebarWidth = 240, questTargetName }: Props) {
   const [dims, setDims] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export function OffscreenIndicators({ shipPosition, shipRotation, contacts, side
     const aspect = dims.w / dims.h;
     const halfH = VIEW_SIZE / 2;
     const halfW = halfH * aspect;
-    const heading = -shipRotation;
+    const heading = -physicsHeading;
 
     return contacts
       .map((contact) => {
@@ -89,7 +90,7 @@ export function OffscreenIndicators({ shipPosition, shipRotation, contacts, side
         };
       })
       .filter(Boolean);
-  }, [shipPosition, shipRotation, contacts, dims]);
+  }, [shipPosition, physicsHeading, contacts, dims]);
 
   if (indicators.length === 0) return null;
 
@@ -103,7 +104,7 @@ export function OffscreenIndicators({ shipPosition, shipRotation, contacts, side
           ind && (
             <div
               key={ind.id}
-              className={`offscreen-indicator${ind.type === "ship" ? " ship-indicator" : ""}`}
+              className={`offscreen-indicator${ind.type === "ship" ? " ship-indicator" : ""}${questTargetName && ind.name === questTargetName ? " quest-target-indicator" : ""}`}
               style={{ left: ind.x, top: ind.y }}
             >
               <span className="offscreen-dot" />

@@ -2,8 +2,14 @@
   "name": "escape-velocity-chat",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "overrides": {
+    "wrangler": "^4.67.0"
+  },
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --port ${API_PORT:-8787}",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit"
   },

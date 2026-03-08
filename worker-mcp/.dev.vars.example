@@ -1,0 +1,14 @@
+# ─────────────────────────────────────────────────────────────
+# MCP Worker Local Development Secrets
+# Copy to .dev.vars for local development
+# These are NOT deployed — production secrets use `wrangler secret put`
+# ─────────────────────────────────────────────────────────────
+
+# 3-tier API key system (at least one required)
+MCP_API_KEY = "your_full_access_key"        # Tier 1: full access (delete, raw SQL)
+MCP_API_KEY_RW = "your_readwrite_key"       # Tier 2: read/write (no delete, no raw SQL)
+MCP_API_KEY_RO = "your_readonly_key"        # Tier 3: read-only (analytics + query only)
+
+# OAuth HMAC secret (required for Claude.ai OAuth flow)
+# Falls back to MCP_API_KEY if not set
+# OAUTH_HMAC_SECRET = "your_hmac_secret"

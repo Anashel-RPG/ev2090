@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import type { QuestCommsState, QuestDialogueLine } from "@/types/game";
 import "./ChatPanel.css";
 
 interface ChatMessage {
@@ -11,9 +12,29 @@ interface ChatMessage {
 interface Props {
   apiUrl: string;
   nickname: string;
+  questComms: QuestCommsState | null;
 }
 
-export function ChatPanel({ apiUrl, nickname }: Props) {
+/** Merge chat messages and quest transcript, sorted by timestamp. */
+function mergeMessages(
+  chat: ChatMessage[],
+  quest: QuestDialogueLine[],
+): Array<{ id: string; type: "chat" | "quest"; data: ChatMessage | QuestDialogueLine }> {
+  const merged: Array<{ id: string; type: "chat" | "quest"; data: ChatMessage | QuestDialogueLine; ts: number }> = [];
+
+  for (const m of chat) {
+    merged.push({ id: m.id, type: "chat", data: m, ts: m.timestamp });
+  }
+  for (const q of quest) {
+    merged.push({ id: q.id, type: "quest", data: q, ts: q.timestamp });
+  }
+
+  merged.sort((a, b) => a.ts - b.ts);
+  // Keep last 20 messages
+  return merged.slice(-20);
+}
+
+export function ChatPanel({ apiUrl, nickname, questComms }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
@@ -24,18 +45,44 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Cache quest transcript so NPC messages persist after quest completes
+  const [cachedQuestTranscript, setCachedQuestTranscript] = useState<QuestDialogueLine[]>([]);
+
+  // Quest visible — messages are flowing, keep COMMS at full opacity
+  const questVisible = questComms !== null && questComms.phase !== "COMPLETE";
+
+  // Narrative active — input locked, full mission styling (SIGNAL_DETECTED and beyond)
+  const narrativeActive = questComms !== null &&
+    questComms.phase !== "IDLE" &&
+    questComms.phase !== "COMPLETE";
+
+  // No auto-expand — user can minimize COMMS during mission
+
   // Keep COMMS fully visible for 10 seconds on load, then fade
   useEffect(() => {
     const timer = setTimeout(() => setFresh(false), 10000);
     return () => clearTimeout(timer);
   }, []);
 
+  // Update cached quest transcript whenever new messages arrive
+  useEffect(() => {
+    if (questComms?.transcript && questComms.transcript.length > 0) {
+      setCachedQuestTranscript(questComms.transcript);
+    }
+  }, [questComms?.transcript]);
+
+  // Merge chat + quest messages (use cached transcript so NPC text persists)
+  const mergedMessages = useMemo(
+    () => mergeMessages(messages, cachedQuestTranscript),
+    [messages, cachedQuestTranscript],
+  );
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [mergedMessages]);
 
-  // Load chat history on mount (fast initial paint before SSE connects)
+  // Load chat history on mount
   useEffect(() => {
     (async () => {
       try {
@@ -46,7 +93,6 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
         }
         const data: ChatMessage[] = await res.json();
         if (!Array.isArray(data) || data.length === 0) return;
-        // Merge with any messages already delivered by SSE — don't replace
         setMessages((prev) => {
           const seen = new Map(prev.map((m) => [m.id, m]));
           for (const m of data) {
@@ -80,13 +126,12 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
       try {
         const msg: ChatMessage = JSON.parse(event.data);
         setMessages((prev) => {
-          // Deduplicate by id
           if (prev.some((m) => m.id === msg.id)) return prev;
           const updated = [...prev, msg];
           return updated.slice(-7);
         });
       } catch {
-        // Ignore parse errors (e.g. ping comments)
+        // Ignore parse errors
       }
     };
 
@@ -96,7 +141,6 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
       esRef.current = null;
       setConnected(false);
 
-      // Auto-reconnect after 3 seconds
       reconnectTimer.current = setTimeout(() => {
         connect();
       }, 3000);
@@ -138,8 +182,6 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
         return;
       }
 
-      // If SSE isn't connected, we won't get an echo back in real-time.
-      // Add a local echo using the server-generated id so we dedupe later.
       if (!connected) {
         const data = (await res.json().catch(() => null)) as { id?: string } | null;
         const id = data?.id ?? `local-${Date.now()}`;
@@ -153,7 +195,6 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
       }
     } catch (err) {
       console.error("[COMMS] send error:", err);
-      // Offline — show locally
       setMessages((prev) => [
         ...prev.slice(-6),
         {
@@ -177,7 +218,7 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
   };
 
   return (
-    <div className={`chat-panel ${minimized ? "chat-minimized" : ""} ${fresh ? "chat-fresh" : ""}`}>
+    <div className={`chat-panel ${minimized ? "chat-minimized" : ""} ${fresh ? "chat-fresh" : ""} ${questVisible ? "chat-quest-visible" : ""} ${narrativeActive ? "chat-mission-active" : ""}`}>
       <div className="chat-header" onClick={() => setMinimized(!minimized)}>
         <span className="chat-title">COMMS</span>
         <span
@@ -189,29 +230,50 @@ export function ChatPanel({ apiUrl, nickname }: Props) {
       {!minimized && (
         <>
           <div className="chat-messages">
-            {messages.length === 0 && (
+            {mergedMessages.length === 0 && (
               <div className="chat-empty">No transmissions yet...</div>
             )}
-            {messages.map((msg) => (
-              <div key={msg.id} className="chat-msg">
-                <span className="chat-nick">[{msg.nickname}]</span>{" "}
-                <span className="chat-text">{msg.text}</span>
-              </div>
-            ))}
+            {mergedMessages.map((entry) => {
+              if (entry.type === "chat") {
+                const msg = entry.data as ChatMessage;
+                return (
+                  <div key={entry.id} className="chat-msg">
+                    <span className="chat-nick">[{msg.nickname}]</span>{" "}
+                    <span className="chat-text">{msg.text}</span>
+                  </div>
+                );
+              }
+              // Quest message
+              const q = entry.data as QuestDialogueLine;
+              return (
+                <div key={entry.id} className={`chat-msg chat-quest chat-quest-${q.type}`}>
+                  <span className="chat-quest-sender">[{q.sender}]</span>{" "}
+                  <span className="chat-quest-text">{q.text}</span>
+                </div>
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
           <div className="chat-input-row">
-            <span className="chat-prompt">&gt;</span>
-            <input
-              ref={inputRef}
-              type="text"
-              className="chat-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="transmit..."
-              maxLength={200}
-            />
+            <span className={`chat-prompt ${narrativeActive ? "chat-prompt-mission" : ""}`}>
+              {narrativeActive ? "!" : ">"}
+            </span>
+            {narrativeActive ? (
+              <div className="chat-input chat-input-locked">
+                {questComms?.objective ?? "MISSION ACTIVE"}
+              </div>
+            ) : (
+              <input
+                ref={inputRef}
+                type="text"
+                className="chat-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="transmit..."
+                maxLength={200}
+              />
+            )}
           </div>
         </>
       )}

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { Vec2 } from "@/types/game";
+import { ModelCache } from "../systems/ModelCache";
 
 /**
  * Planet entity with AI-generated texture mapped onto a 3D sphere.
@@ -53,6 +54,27 @@ export class Planet {
   private atmosphere: THREE.Mesh | null = null;
   private rotationSpeed: number;
 
+  /**
+   * Spin axis interpolation: change the DIRECTION of rotation (not the planet
+   * orientation) during the FPV transition. This avoids the visible "roll" that
+   * happens when lerping sphere.rotation.x directly.
+   *
+   * Top-down spin axis: local Z after the initial X tilt (PI/2 + 0.3). This is
+   * what makes the equator spin horizontally in top-down view.
+   *
+   * FPV spin axis: a more vertical axis so the planet looks like it's spinning
+   * like a globe when viewed from behind the ship.
+   */
+  private static readonly INITIAL_TILT = Math.PI / 2 + 0.3;
+  /** Top-down: spin around local Z (after the X tilt, this is roughly world-Y) */
+  private static readonly TOP_DOWN_AXIS = new THREE.Vector3(0, 0, 1);
+  /** FPV: spin around a tilted axis that looks like globe spin from behind-ship view */
+  private static readonly FPV_AXIS = new THREE.Vector3(0, Math.sin(0.3), Math.cos(0.3)).normalize();
+  /** Accumulated spin angle (never resets, just accumulates) */
+  private spinAngle = 0;
+  /** Current FPV transition for spin axis interpolation */
+  private fpvT = 0;
+
   constructor(config: PlanetConfig) {
     this.name = config.name;
     this.position = config.position;
@@ -80,11 +102,8 @@ export class Planet {
       this.sphere.rotation.x = Math.PI / 2 + 0.3;
       this.mesh.add(this.sphere);
     } else if (config.texturePath) {
-      // Load texture from file
-      const loader = new THREE.TextureLoader();
-      loader.load(config.texturePath, (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-
+      // Load texture via ModelCache (routes CDN URLs through IndexedDB cache)
+      ModelCache.loadTexture(config.texturePath).then((texture) => {
         const material = new THREE.MeshStandardMaterial({
           map: texture,
           metalness: 0.1,
@@ -136,9 +155,39 @@ export class Planet {
   }
 
   update(dt: number) {
-    if (this.sphere) {
-      this.sphere.rotation.z += this.rotationSpeed * dt;
-    }
+    if (!this.sphere) return;
+
+    // Accumulate spin angle (continuous, never resets)
+    this.spinAngle += this.rotationSpeed * dt;
+
+    // Interpolate the spin axis between top-down and FPV.
+    // This changes the DIRECTION of spin without moving the planet texture.
+    const axis = Planet._tmpAxis
+      .copy(Planet.TOP_DOWN_AXIS)
+      .lerp(Planet.FPV_AXIS, this.fpvT)
+      .normalize();
+
+    // Build orientation: base tilt (fixed) + spin around interpolated axis
+    Planet._tmpQuat.setFromAxisAngle(
+      Planet._xAxis,
+      Planet.INITIAL_TILT,
+    );
+    Planet._tmpSpinQuat.setFromAxisAngle(axis, this.spinAngle);
+    // Final = baseTilt * spin
+    this.sphere.quaternion.copy(Planet._tmpQuat).multiply(Planet._tmpSpinQuat);
+  }
+
+  // Reusable temp objects (avoid per-frame allocation)
+  private static _tmpAxis = new THREE.Vector3();
+  private static _tmpQuat = new THREE.Quaternion();
+  private static _tmpSpinQuat = new THREE.Quaternion();
+  private static _xAxis = new THREE.Vector3(1, 0, 0);
+
+  /** Set FPV transition (0 = top-down, 1 = fully FPV).
+   *  Smoothly changes the spin AXIS direction so the planet's rotation looks
+   *  correct from either camera angle — without moving the texture itself. */
+  setFpvTransition(t: number) {
+    this.fpvT = t;
   }
 
   /** Distance from a point to this planet's center */

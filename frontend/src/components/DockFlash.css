@@ -1,0 +1,18 @@
+/* ─── Dock Flash ─── */
+/* Full-screen white flash for dock / undock transitions */
+
+.dock-flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  pointer-events: none;
+  z-index: 100;
+  animation: dock-flash-anim 0.65s ease-out forwards;
+}
+
+@keyframes dock-flash-anim {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.28; }
+  30%  { opacity: 0.28; }
+  100% { opacity: 0; }
+}

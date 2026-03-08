@@ -1,13 +1,22 @@
 {
-  "name": "escape-velocity",
+  "name": "ev2090",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "worker",
+    "worker-mcp",
+    "admin"
+  ],
   "devDependencies": {
     "concurrently": "^9.2.0"
   },
   "scripts": {
-    "dev": "concurrently -n frontend,api -c blue,magenta \"npm --prefix frontend run dev\" \"npm --prefix worker run dev\"",
+    "dev": "concurrently -n frontend,api,admin,seed -c blue,magenta,cyan,yellow \"VITE_API_PROXY_TARGET=http://127.0.0.1:${API_PORT:-8787} npm --prefix frontend run dev\" \"npm --prefix worker run dev\" \"npm --prefix admin run dev\" \"sleep 8 && curl -sf -X POST 'http://localhost:${API_PORT:-8787}/api/dev/seed?force=true' && echo 'Economy seeded (fresh bootstrap)' || echo 'Seed skipped (ADMIN_API_KEY is set — run npm run reset manually)'\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:api": "npm --prefix worker run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "seed": "curl -s -X POST http://localhost:${API_PORT:-8787}/api/dev/seed",
+    "reset": "curl -sf -X POST \"http://localhost:${API_PORT:-8787}/api/dev/seed?force=true\" && echo 'Economy reset + reseeded' || echo 'Reset failed — is the worker running? (npm run dev:api)'",
     "deploy": "npm --prefix frontend run build && npm --prefix frontend run deploy",
     "deploy:api": "npm --prefix worker run deploy"
   }

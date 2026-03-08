@@ -38,3 +38,27 @@
   background: rgba(0, 255, 136, 0.7);
   box-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
 }
+
+/* Quest target — pure white glowing text */
+.offscreen-indicator.quest-target-indicator {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.3);
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  animation: quest-target-glow 2s ease-in-out infinite;
+}
+
+.offscreen-indicator.quest-target-indicator .offscreen-dot {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 14px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes quest-target-glow {
+  0%, 100% {
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4), 0 0 12px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.4);
+  }
+}

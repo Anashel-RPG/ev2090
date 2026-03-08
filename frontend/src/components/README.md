@@ -12,9 +12,7 @@ Game.tsx (orchestrator)
 │   ├── RadarPanel (SVG scanner)
 │   ├── ShipDiagnosticPanel (wireframe + stats)
 │   ├── ShipSelectorPanel (ship picker)
-│   ├── ShipStatusPanel (hull/shield/fuel)
-│   ├── TargetPanel (target info)
-│   └── NavigationPanel (coordinates)
+│   └── CargoPanel (credits/cargo)
 ├── ChatPanel (SSE multiplayer chat)
 ├── NicknameEditor (player name)
 ├── OffscreenIndicators (direction arrows)
@@ -41,9 +39,6 @@ Game.tsx (orchestrator)
 | **RadarPanel**         | `RadarPanel.tsx`              | SVG-based radar display showing nearby contacts as blips with a rotating sweep line. |
 | **ShipDiagnosticPanel**| `ShipDiagnosticPanel.tsx`     | Renders a wireframe diagram of the current ship with labeled stats. |
 | **ShipSelectorPanel**  | `ShipSelectorPanel.tsx`       | Grid of available ships. Clicking a ship tells the engine to swap models. |
-| **ShipStatusPanel**    | `ShipStatusPanel.tsx`         | Horizontal bars for hull integrity, shield strength, and fuel level. |
-| **TargetPanel**        | `TargetPanel.tsx`             | Displays information about the currently targeted NPC (name, distance, bearing). |
-| **NavigationPanel**    | `NavigationPanel.tsx`         | Shows the player ship's current coordinates and heading.   |
 
 ### Config Utilities (`config/`)
 

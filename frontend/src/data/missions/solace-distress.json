@@ -1,0 +1,88 @@
+{
+  "id": "solace-distress",
+  "name": "Solace Distress",
+  "description": "Rescue a stranded cargo vessel and her crew of six.",
+  "storageKey": "ev-quest-solace",
+  "npc": {
+    "id": "quest-solace",
+    "name": "Solace",
+    "shipId": "imperial",
+    "color": "Red",
+    "spawnMethod": "random-near-planet",
+    "spawnDistance": 60
+  },
+  "phases": [
+    {
+      "id": "IDLE",
+      "objective": "",
+      "timedMessages": [
+        { "sender": "SYSTEM", "text": "Long-range sensors warming up...", "type": "system", "at": 0 },
+        { "sender": "SYSTEM", "text": "Scanner online. Sweep initiated.", "type": "system", "at": 5 }
+      ],
+      "spawnNpcAt": 10,
+      "exit": { "trigger": "timer", "delay": 10 }
+    },
+    {
+      "id": "SIGNAL_DETECTED",
+      "objective": "LOCATE: SOLACE",
+      "incomingTransmission": true,
+      "dialogue": [
+        { "sender": "EMERGENCY", "text": "Automated distress beacon detected on long-range scanner.", "type": "emergency", "delay": 0 },
+        { "sender": "UNKNOWN", "text": "...zzt... hull breach in cargo bay 3... life support failing...", "type": "ship", "delay": 3 },
+        { "sender": "UNKNOWN", "text": "This is the cargo vessel Solace. If anyone can hear this...", "type": "ship", "delay": 5 },
+        { "sender": "EMERGENCY", "text": "Source locked. Bearing updated on scanner.", "type": "emergency", "delay": 3 }
+      ],
+      "exit": { "trigger": "proximity", "range": 40 }
+    },
+    {
+      "id": "APPROACHING",
+      "objective": "APPROACH THE SOLACE",
+      "dialogue": [
+        { "sender": "Solace", "text": "We read you on scanner! Please... our nav computer is dead.", "type": "ship", "delay": 0 },
+        { "sender": "Solace", "text": "We were hauling medical supplies to Nexara when the reactor spiked.", "type": "ship", "delay": 4 },
+        { "sender": "Solace", "text": "Crew of six. We've got maybe twenty minutes of air left.", "type": "ship", "delay": 4 }
+      ],
+      "exit": { "trigger": "proximity", "range": 8 }
+    },
+    {
+      "id": "ARRIVED",
+      "objective": "RESCUE THE SOLACE",
+      "dialogue": [
+        { "sender": "Solace", "text": "You beautiful fool, you actually came.", "type": "ship", "delay": 0 },
+        { "sender": "Solace", "text": "We're standing by for extraction. Ready when you are, pilot.", "type": "ship", "delay": 4 }
+      ],
+      "rescuable": true,
+      "exit": { "trigger": "action", "action": "rescue" }
+    },
+    {
+      "id": "RESCUED",
+      "objective": "RESCUE IN PROGRESS",
+      "lockControls": true,
+      "dialogue": [
+        { "sender": "SYSTEM", "text": "Initiating crew transfer...", "type": "system", "delay": 0 },
+        { "sender": "Solace", "text": "Transferring crew to escape pods now. Stand by for pickup...", "type": "ship", "delay": 3 },
+        { "sender": "Solace", "text": "All six aboard the pods. We're clear.", "type": "ship", "delay": 4 },
+        { "sender": "SYSTEM", "text": "Escape pods recovered. Six crew members rescued.", "type": "system", "delay": 3 },
+        { "sender": "Solace", "text": "Captain Torres here. I won't forget this, pilot.", "type": "ship", "delay": 4 },
+        { "sender": "Solace", "text": "If you're ever docked at Nexara, the drinks are on us.", "type": "ship", "delay": 4 },
+        { "sender": "SYSTEM", "text": "+500 credits. Reputation increased.", "type": "system", "delay": 3 }
+      ],
+      "animation": "rescue-sequence",
+      "exit": { "trigger": "animation-complete" }
+    },
+    {
+      "id": "FADING",
+      "objective": "MISSION COMPLETE \u2014 6 CREW RESCUED",
+      "lockControls": true,
+      "npcFadeOut": true,
+      "animationParams": { "fadeDuration": 2 },
+      "exit": { "trigger": "animation-complete" }
+    },
+    {
+      "id": "COMPLETE",
+      "objective": "MISSION COMPLETE \u2014 6 CREW RESCUED",
+      "lingerDuration": 10,
+      "exit": { "trigger": "timer", "delay": 10 }
+    }
+  ]
+}

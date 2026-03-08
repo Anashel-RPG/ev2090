@@ -28,6 +28,18 @@
   opacity: 1;
 }
 
+/* Quest visible — messages flowing, full opacity */
+.chat-panel.chat-quest-visible {
+  opacity: 1;
+}
+
+/* Narrative active — full mission styling */
+.chat-panel.chat-mission-active {
+  opacity: 1;
+  border-color: rgba(255, 40, 40, 0.4);
+  transition: opacity 0.3s ease, border-color 0.6s ease;
+}
+
 .chat-panel.chat-minimized {
   max-height: none;
 }
@@ -47,6 +59,10 @@
   letter-spacing: 2px;
   color: var(--text-dim);
   flex: 1;
+}
+
+.chat-mission-active .chat-title {
+  color: rgba(255, 40, 40, 0.8);
 }
 
 .chat-status {
@@ -110,6 +126,59 @@
   color: var(--text-primary);
 }
 
+/* ─── Quest message styles ─── */
+
+.chat-quest {
+  padding: 1px 0;
+}
+
+.chat-quest-sender {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.chat-quest-text {
+  font-size: 12px;
+}
+
+/* Emergency — red */
+.chat-quest-emergency .chat-quest-sender {
+  color: #ff4444;
+}
+
+.chat-quest-emergency .chat-quest-text {
+  color: #ff6655;
+}
+
+/* Ship — orange */
+.chat-quest-ship .chat-quest-sender {
+  color: #ff8833;
+}
+
+.chat-quest-ship .chat-quest-text {
+  color: #ffaa66;
+}
+
+/* System — cyan */
+.chat-quest-system .chat-quest-sender {
+  color: #44ccff;
+}
+
+.chat-quest-system .chat-quest-text {
+  color: #88ddff;
+}
+
+/* Player — green */
+.chat-quest-player .chat-quest-sender {
+  color: var(--accent-green);
+}
+
+.chat-quest-player .chat-quest-text {
+  color: var(--accent-green);
+}
+
+/* ─── Input row ─── */
+
 .chat-input-row {
   display: flex;
   align-items: center;
@@ -122,6 +191,10 @@
   color: var(--accent-green);
   font-size: 10px;
   flex-shrink: 0;
+}
+
+.chat-prompt-mission {
+  color: #ff4444;
 }
 
 .chat-input {
@@ -138,4 +211,31 @@
 .chat-input::placeholder {
   color: var(--text-dim);
   opacity: 0.5;
+}
+
+/* Locked input during narrative — red glowing background, white text */
+.chat-input-locked {
+  color: #ffffff;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  background: rgba(255, 30, 30, 0.2);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  animation: mission-lock-glow 2s ease-in-out infinite;
+}
+
+@keyframes mission-lock-glow {
+  0%, 100% {
+    background: rgba(255, 30, 30, 0.15);
+    box-shadow: inset 0 0 10px rgba(255, 30, 30, 0.15), 0 0 6px rgba(255, 30, 30, 0.1);
+  }
+  50% {
+    background: rgba(255, 30, 30, 0.3);
+    box-shadow: inset 0 0 18px rgba(255, 30, 30, 0.3), 0 0 12px rgba(255, 30, 30, 0.2);
+  }
+}
+
+/* ─── Docked: chat above letterbox bars ─── */
+.game-docked .chat-panel {
+  z-index: 91;
 }

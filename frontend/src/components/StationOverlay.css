@@ -1,0 +1,459 @@
+/* ═══════════════════════════════════════════════════
+   Station Overlay — Fullscreen BBS CRT Terminal
+   Background: terminal.jpg (1250x690)
+   Screen area: (590,190) to (900,460) in image coords
+   ═══════════════════════════════════════════════════ */
+
+/* CRT power-on animation */
+@keyframes station-boot {
+  0% {
+    transform: scaleY(0.005) scaleX(0.8);
+    filter: brightness(4);
+    opacity: 0;
+  }
+  30% {
+    transform: scaleY(0.005) scaleX(1);
+    filter: brightness(4);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleY(1) scaleX(1);
+    filter: brightness(1.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1) scaleX(1);
+    filter: brightness(1);
+    opacity: 1;
+  }
+}
+
+@keyframes crt-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes crt-flicker {
+  0%   { opacity: 0.97; }
+  5%   { opacity: 1; }
+  10%  { opacity: 0.98; }
+  15%  { opacity: 1; }
+  92%  { opacity: 1; }
+  95%  { opacity: 0.96; }
+  100% { opacity: 1; }
+}
+
+/* ─── Root overlay ─── */
+.station-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #000;
+  overflow: hidden;
+  animation: station-boot 0.6s ease-out;
+}
+
+/* ─── Frame: aspect-ratio locked, sized to COVER the viewport ─── */
+/* min-width/min-height 100% + centering = CSS "cover" for the frame itself,
+   so percentage-based children always align with the image. */
+.station-frame {
+  position: absolute;
+  /* Center the frame */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* Cover: whichever axis is smaller gets 100%, the other overflows */
+  min-width: 100%;
+  min-height: 100%;
+  /* Lock to image aspect ratio */
+  aspect-ratio: 1250 / 690;
+}
+
+/* ─── Background image — fills the frame (which covers viewport) ─── */
+.station-bg {
+  position: absolute;
+  inset: 0;
+  background: url("https://cdn.ev2090.com/images/terminal.jpg") center / 100% 100% no-repeat;
+}
+
+/* ─── Screen area: positioned to match the CRT screen in the image ─── */
+.station-screen {
+  position: absolute;
+  left: 44.8%;
+  top: 21.0%;
+  width: 34.4%;
+  height: 49.3%;
+  overflow: hidden;
+  /* CRT curvature — rounded edges suggest a convex glass surface */
+  border-radius: 12px;
+}
+
+/* ─── CRT scanlines (scoped to screen) ─── */
+.station-crt-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 3px
+  );
+}
+
+/* ─── CRT glow + vignette ─── */
+.station-crt-glow {
+  display: none;
+}
+
+/* ─── Screen content ─── */
+.station-screen-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 6% 5%;
+  box-sizing: border-box;
+  font-family: var(--font-mono, "Courier New", monospace);
+  color: #00ff64;
+  font-size: clamp(7px, 1.1vw, 12px);
+  line-height: 1.45;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* NO background — text renders directly on the CRT screen image */
+  background: transparent;
+  animation: crt-flicker 4s infinite;
+
+  /* Barrel bulge: scale slightly larger than container, overflow hidden clips edges */
+  transform: scale(1.03);
+  transform-origin: center center;
+
+  /* Strong CRT phosphor glow — Marathon-style */
+  text-shadow:
+    0 0 2px #00ff64,
+    0 0 6px rgba(0, 255, 100, 0.6),
+    0 0 14px rgba(0, 255, 100, 0.3),
+    0 0 28px rgba(0, 255, 100, 0.1);
+}
+
+/* Scrollbar */
+.station-screen-content::-webkit-scrollbar {
+  width: 3px;
+}
+
+.station-screen-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.station-screen-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 100, 0.15);
+}
+
+/* ─── Boot sequence ─── */
+.station-boot-sequence {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.station-boot-line {
+  color: rgba(0, 255, 100, 0.75);
+  white-space: pre;
+  text-shadow:
+    0 0 3px rgba(0, 255, 100, 0.5),
+    0 0 10px rgba(0, 255, 100, 0.2);
+}
+
+.station-boot-line-ok {
+  color: #00ff64;
+  text-shadow:
+    0 0 3px #00ff64,
+    0 0 8px rgba(0, 255, 100, 0.6),
+    0 0 18px rgba(0, 255, 100, 0.25);
+}
+
+.station-boot-cursor {
+  animation: crt-blink 0.7s step-end infinite;
+  color: rgba(0, 255, 100, 0.9);
+}
+
+/* ─── BBS header ─── */
+.station-bbs-header {
+  white-space: pre;
+  text-align: left;
+  color: rgba(0, 255, 100, 0.6);
+  margin-bottom: 0.4em;
+  font-size: 1em;
+}
+
+.station-bbs-title {
+  color: #00ff64;
+  text-shadow:
+    0 0 3px #00ff64,
+    0 0 10px rgba(0, 255, 100, 0.6),
+    0 0 25px rgba(0, 255, 100, 0.2);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* ─── BBS menu options ─── */
+.station-bbs-menu {
+  margin: 0.3em 0;
+}
+
+.station-bbs-option {
+  cursor: pointer;
+  padding: 0.15em 0;
+  color: rgba(0, 255, 100, 0.45);
+  transition: color 0.15s, text-shadow 0.15s;
+  white-space: pre;
+}
+
+.station-bbs-option:hover {
+  color: rgba(0, 255, 100, 0.8);
+  text-shadow: 0 0 6px rgba(0, 255, 100, 0.25);
+}
+
+.station-bbs-option-active {
+  color: #00ff64;
+  text-shadow:
+    0 0 3px #00ff64,
+    0 0 8px rgba(0, 255, 100, 0.5),
+    0 0 18px rgba(0, 255, 100, 0.2);
+}
+
+.station-bbs-divider {
+  color: rgba(0, 255, 100, 0.15);
+  white-space: pre;
+  margin: 0.3em 0;
+  user-select: none;
+}
+
+/* ─── BBS body (tab content area) ─── */
+.station-bbs-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ─── BBS footer ─── */
+.station-bbs-footer {
+  margin-top: 0.4em;
+  padding-top: 0.3em;
+  border-top: 1px solid rgba(0, 255, 100, 0.1);
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+  color: rgba(255, 80, 80, 0.7);
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.station-bbs-footer:hover {
+  color: rgba(255, 80, 80, 0.95);
+  text-shadow: 0 0 6px rgba(255, 80, 80, 0.3);
+}
+
+.station-bbs-cursor {
+  animation: crt-blink 0.7s step-end infinite;
+  color: rgba(0, 255, 100, 0.8);
+}
+
+/* ─── Operations (BBS text style) ─── */
+.station-ops-bbs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.station-ops-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  white-space: pre;
+}
+
+.station-ops-label {
+  color: rgba(0, 255, 100, 0.5);
+  min-width: 4ch;
+}
+
+.station-ops-bar-text {
+  color: rgba(0, 255, 100, 0.8);
+  letter-spacing: 0;
+}
+
+.station-ops-bar-text-armor {
+  color: rgba(255, 160, 80, 0.8);
+}
+
+.station-ops-bar-text-shields {
+  color: rgba(100, 160, 255, 0.8);
+}
+
+.station-ops-bar-text-fuel {
+  color: rgba(0, 255, 100, 0.8);
+}
+
+.station-ops-value {
+  color: rgba(0, 255, 100, 0.6);
+  min-width: 4ch;
+  text-align: right;
+}
+
+.station-ops-actions {
+  display: flex;
+  gap: 1em;
+  margin-top: 0.5em;
+}
+
+.station-ops-action {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: rgba(0, 255, 100, 0.5);
+  cursor: pointer;
+  transition: color 0.15s, text-shadow 0.15s;
+}
+
+.station-ops-action:hover:not(:disabled) {
+  color: rgba(0, 255, 100, 0.95);
+  text-shadow: 0 0 6px rgba(0, 255, 100, 0.3);
+}
+
+.station-ops-action:disabled {
+  color: rgba(0, 255, 100, 0.25);
+  cursor: default;
+}
+
+.station-ops-done {
+  color: rgba(0, 255, 100, 0.3);
+  font-style: italic;
+}
+
+/* ─── Station log (BBS) ─── */
+.station-log {
+  margin-top: 0.5em;
+  padding-top: 0.3em;
+  border-top: 1px solid rgba(0, 255, 100, 0.08);
+}
+
+.station-log-header {
+  font-size: 0.85em;
+  letter-spacing: 2px;
+  color: rgba(0, 255, 100, 0.35);
+  margin-bottom: 0.3em;
+}
+
+.station-log-text {
+  color: rgba(0, 255, 100, 0.55);
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.station-log-desc {
+  margin-top: 0.3em;
+  color: rgba(0, 255, 100, 0.35);
+  font-size: 0.85em;
+}
+
+/* ─── Cargo tab (BBS) ─── */
+.station-cargo-bbs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.station-cargo-bbs-header {
+  color: #00ff64;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 3px #00ff64,
+    0 0 10px rgba(0, 255, 100, 0.5);
+  margin-bottom: 0.2em;
+}
+
+.station-cargo-bbs-row {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(0, 255, 100, 0.7);
+  white-space: pre;
+}
+
+.station-cargo-bbs-empty {
+  color: rgba(0, 255, 100, 0.3);
+  text-align: center;
+  padding: 1em 0;
+  font-style: italic;
+}
+
+.station-cargo-bbs-divider {
+  color: rgba(0, 255, 100, 0.15);
+  white-space: pre;
+  user-select: none;
+}
+
+.station-cargo-bbs-item {
+  display: flex;
+  gap: 0.5em;
+  color: rgba(0, 255, 100, 0.6);
+  white-space: pre;
+}
+
+.station-cargo-bbs-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.station-cargo-bbs-item-qty {
+  color: rgba(0, 255, 100, 0.4);
+  min-width: 4ch;
+  text-align: right;
+}
+
+.station-cargo-bbs-item-val {
+  color: rgba(0, 255, 100, 0.7);
+  min-width: 8ch;
+  text-align: right;
+}
+
+/* ─── Mobile: drop the image, fullscreen green-on-black ─── */
+@media (max-width: 767px) {
+  .station-bg {
+    display: none;
+  }
+
+  .station-frame {
+    max-width: none;
+    max-height: none;
+  }
+
+  .station-screen {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .station-screen-content {
+    font-size: 13px;
+    padding: 16px;
+    transform: none;
+    /* On mobile with no image, use a subtle dark bg */
+    background: rgba(4, 12, 4, 0.92);
+  }
+
+  .station-crt-glow {
+    display: none;
+  }
+}

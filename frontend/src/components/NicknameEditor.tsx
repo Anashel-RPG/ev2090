@@ -1,3 +1,4 @@
+/** Nickname editor — inline editable pilot callsign displayed in the HUD. */
 import { useState, useRef, useEffect } from "react";
 import "./NicknameEditor.css";
 

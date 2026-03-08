@@ -46,6 +46,28 @@
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-dim);
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Ghost config toggle — nearly invisible, far right of logo */
+.config-ghost-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.config-ghost-btn:hover {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .logo-text {
@@ -156,6 +178,11 @@
   letter-spacing: 2px;
 }
 
+/* Spacer — pushes ship selector + hangar to bottom */
+.sidebar-spacer {
+  flex: 1;
+}
+
 /* Sidebar Footer */
 
 .sidebar-footer {
@@ -169,6 +196,26 @@
 .fps-counter {
   font-size: 9px;
   color: var(--text-dim);
+}
+
+/* ─── Ship Forge Button ─── */
+
+.forge-sidebar-btn {
+  width: 100%;
+  background: rgba(100, 180, 255, 0.06);
+  border: 1px solid rgba(100, 180, 255, 0.15);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #88ccff;
+  padding: 10px 14px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.forge-sidebar-btn:hover {
+  background: rgba(100, 180, 255, 0.12);
+  border-color: rgba(100, 180, 255, 0.3);
 }
 
 /* ─── Ship Selector ─── */
@@ -228,9 +275,15 @@
   color: var(--text-dim);
 }
 
-/* Sidebar boot animation */
+/* FPV slide-out — sidebar smoothly exits right during FPV cockpit view.
+   Duration matches CameraController FPV transition (~0.4s). */
 .sidebar-boot-wrapper {
-  /* always visible */
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+.sidebar-boot-wrapper.sidebar-fpv-hidden {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 .sidebar-boot-wrapper.sidebar-booting {
   /* No "forwards" — filter must not persist after animation ends.

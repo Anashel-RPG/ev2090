@@ -15,6 +15,9 @@ export class LightingSetup {
   private keyLight: THREE.DirectionalLight;
   private fillLight: THREE.DirectionalLight;
   private rimLight: THREE.DirectionalLight;
+  /** FPV-only edge light: starts at intensity 0, fades in during FPV transition
+   *  to illuminate ship edges without overdriving the main lights + bloom. */
+  private fpvLight: THREE.DirectionalLight;
 
   private ship: Ship | null = null;
   private nebulaBg: NebulaBg | null = null;
@@ -25,14 +28,14 @@ export class LightingSetup {
   private shipModelRz = 0;
 
   constructor(scene: THREE.Scene) {
-    this.ambientLight = new THREE.AmbientLight(0x334455, 0.35);
+    this.ambientLight = new THREE.AmbientLight(0x334455, 0);
     scene.add(this.ambientLight);
 
-    this.hemiLight = new THREE.HemisphereLight(0xccddff, 0x112233, 0.25);
+    this.hemiLight = new THREE.HemisphereLight(0xccddff, 0x112233, 0.5);
     this.hemiLight.position.set(0, 0, 1);
     scene.add(this.hemiLight);
 
-    this.keyLight = new THREE.DirectionalLight(0xffeedd, 4.9);
+    this.keyLight = new THREE.DirectionalLight(0xffeedd, 6.9);
     this.keyLight.position.set(71, 60, 66);
     scene.add(this.keyLight);
 
@@ -43,6 +46,20 @@ export class LightingSetup {
     this.rimLight = new THREE.DirectionalLight(0x6688cc, 2.5);
     this.rimLight.position.set(27, 21, 0);
     scene.add(this.rimLight);
+
+    // FPV edge light: warm white, off by default (intensity 0).
+    // Positioned to illuminate ship edges from below-left.
+    // Selective lighting (ships only, not planets) is achieved via two-pass
+    // rendering in PostProcessing — NOT via Three.js layers (layers on a light
+    // only control camera visibility, not per-object light filtering).
+    this.fpvLight = new THREE.DirectionalLight(0xffeedd, 0);
+    this.fpvLight.position.set(-40, -30, -20);
+    scene.add(this.fpvLight);
+  }
+
+  /** Expose the FPV edge light for two-pass rendering in PostProcessing. */
+  getFpvLight(): THREE.DirectionalLight {
+    return this.fpvLight;
   }
 
   setShip(ship: Ship) {
@@ -76,7 +93,7 @@ export class LightingSetup {
         y: this.rimLight.position.y,
         z: this.rimLight.position.z,
       },
-      material: { metalness: 0.4, roughness: 0.2, emissiveIntensity: 0.15 },
+      material: { metalness: 0.8, roughness: 0.35, emissiveIntensity: 0.15 },
     };
   }
 
@@ -94,6 +111,13 @@ export class LightingSetup {
       else if (property === "ry") this.shipModelRy = value;
       else if (property === "rz") this.shipModelRz = value;
       this.ship?.setModelRotation(this.shipModelRx, this.shipModelRy, this.shipModelRz);
+      return;
+    }
+
+    // Ship tuning — per-ship model scale and thruster positions
+    if (lightName === "shipTuning") {
+      if (property === "modelScale") this.ship?.setModelScale(value);
+      if (property === "thrusterOffsetY") this.ship?.setThrusterOffsetY(value);
       return;
     }
 
@@ -127,6 +151,7 @@ export class LightingSetup {
     else if (lightName === "keyLight") light = this.keyLight;
     else if (lightName === "fillLight") light = this.fillLight;
     else if (lightName === "rimLight") light = this.rimLight;
+    else if (lightName === "fpvLight") light = this.fpvLight;
 
     if (!light) return;
 

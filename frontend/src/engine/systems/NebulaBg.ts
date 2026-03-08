@@ -9,8 +9,9 @@ import * as THREE from "three";
 // Both layers use depthTest: true so planets properly occlude them.
 // ---------------------------------------------------------------------------
 
-const BG_IMAGE_URL =
-  "https://cdn.ev2090.com/images/nebula.jpg";
+import { CDN_BASE } from "@/config/urls";
+
+const BG_IMAGE_URL = `${CDN_BASE}/images/nebula.jpg`;
 
 const BG_SIZE = 2048; // procedural texture resolution
 const NEBULA_PARALLAX = 0.08; // how much the nebula drifts relative to camera
@@ -182,6 +183,11 @@ export class NebulaBg {
   private nebulaMaterial: THREE.MeshBasicMaterial;
   private nebulaTexture: THREE.CanvasTexture;
 
+  // FPV fade: base opacities are set by config panel, fpvFade multiplies them
+  private baseImageOpacity = 0.14;
+  private baseNebulaOpacity = 0.2;
+  private fpvFade = 1; // 1 = fully visible, 0 = hidden
+
   constructor() {
     this.group = new THREE.Group();
 
@@ -197,7 +203,7 @@ export class NebulaBg {
         this.imageMaterial = new THREE.MeshBasicMaterial({
           map: texture,
           transparent: true,
-          opacity: 0.13,
+          opacity: 0.14,
           depthWrite: false,
           depthTest: true,
         });
@@ -206,7 +212,7 @@ export class NebulaBg {
         const geo = new THREE.PlaneGeometry(100, 56);
         this.imagePlane = new THREE.Mesh(geo, this.imageMaterial);
         this.imagePlane.renderOrder = -100;
-        this.imagePlane.position.z = -25;
+        // Z is set dynamically in update() to track camera distance
         this.group.add(this.imagePlane);
       },
       undefined,
@@ -224,7 +230,7 @@ export class NebulaBg {
     this.nebulaMaterial = new THREE.MeshBasicMaterial({
       map: this.nebulaTexture,
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.2,
       depthWrite: false,
       depthTest: true,
     });
@@ -234,36 +240,57 @@ export class NebulaBg {
       this.nebulaMaterial,
     );
     this.nebulaPlane.renderOrder = -99;
-    this.nebulaPlane.position.z = -22;
+    // Z is set dynamically in update() to track camera distance
     this.group.add(this.nebulaPlane);
   }
 
-  /** Call every frame — keeps layers centered (or near-centered) on camera */
-  update(cameraX: number, cameraY: number) {
-    // Image: fixed to camera (infinitely far away — no parallax)
+  /** Call every frame — keeps layers centered (or near-centered) on camera.
+   *  cameraZ is used to maintain constant camera-to-plane distance so that
+   *  switching from ortho to perspective doesn't change apparent background size. */
+  update(cameraX: number, cameraY: number, cameraZ: number) {
+    // Image: fixed to camera (infinitely far away — no parallax).
+    // Z tracks camera to keep constant distance (125 units = original 100 - (-25)).
     if (this.imagePlane) {
       this.imagePlane.position.x = cameraX;
       this.imagePlane.position.y = cameraY;
+      this.imagePlane.position.z = cameraZ - 125;
     }
 
-    // Procedural nebula: very slight parallax for depth
+    // Procedural nebula: very slight parallax for depth.
+    // Z tracks camera to keep constant distance (122 units = original 100 - (-22)).
     this.nebulaPlane.position.x = cameraX * (1 - NEBULA_PARALLAX);
     this.nebulaPlane.position.y = cameraY * (1 - NEBULA_PARALLAX);
+    this.nebulaPlane.position.z = cameraZ - 122;
   }
 
   // ── Opacity API for config panel ──
 
   setImageOpacity(v: number) {
-    if (this.imageMaterial) this.imageMaterial.opacity = v;
+    this.baseImageOpacity = v;
+    if (this.imageMaterial) this.imageMaterial.opacity = v * this.fpvFade;
   }
   setNebulaOpacity(v: number) {
-    this.nebulaMaterial.opacity = v;
+    this.baseNebulaOpacity = v;
+    this.nebulaMaterial.opacity = v * this.fpvFade;
   }
   getImageOpacity(): number {
-    return this.imageMaterial?.opacity ?? 0.13;
+    return this.baseImageOpacity;
   }
   getNebulaOpacity(): number {
-    return this.nebulaMaterial.opacity;
+    return this.baseNebulaOpacity;
+  }
+
+  /**
+   * Set FPV fade multiplier (1 = fully visible, 0 = hidden).
+   * Multiplies the base opacities set by config panel.
+   * Called by Engine during FPV transition to fade out the flat nebula planes.
+   */
+  setFpvFade(v: number) {
+    this.fpvFade = Math.max(0, Math.min(1, v));
+    if (this.imageMaterial) {
+      this.imageMaterial.opacity = this.baseImageOpacity * this.fpvFade;
+    }
+    this.nebulaMaterial.opacity = this.baseNebulaOpacity * this.fpvFade;
   }
 
   dispose() {

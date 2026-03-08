@@ -1,16 +1,66 @@
 name = "ev-2090-ws"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = [ "nodejs_compat" ]
 
-[durable_objects]
-bindings = [
-  { name = "CHAT_ROOM", class_name = "ChatRoom" }
-]
+[[durable_objects.bindings]]
+name = "CHAT_ROOM"
+class_name = "ChatRoom"
+
+[[durable_objects.bindings]]
+name = "BOARD_ROOM"
+class_name = "BoardRoom"
+
+[[durable_objects.bindings]]
+name = "SHIP_FORGE"
+class_name = "ShipForge"
+
+[[durable_objects.bindings]]
+name = "ECONOMY_REGION"
+class_name = "EconomyRegionDO"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ChatRoom"]
+new_classes = [ "ChatRoom" ]
+
+[[migrations]]
+tag = "v2"
+new_classes = [ "BoardRoom" ]
+
+[[migrations]]
+tag = "v3"
+new_classes = [ "ShipForge" ]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = [ "EconomyRegionDO" ]
+
+[[r2_buckets]]
+binding = "SHIP_MODELS"
+bucket_name = "ev2090-ships"
+
+[[r2_buckets]]
+binding = "STATIC_DATA"
+bucket_name = "ev2090-data"
+
+# Queue for MeshyAI polling (replaces DO alarms)
+[[queues.producers]]
+queue = "meshy-poll-queue"
+binding = "MESHY_QUEUE"
+
+[[queues.consumers]]
+queue = "meshy-poll-queue"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 3
+max_concurrency = 5
+
+# Ship Forge feature lock (set to "true" to block public creation, catalog stays open)
+[vars]
+FORGE_LOCKED = "true"
+
+[images]
+binding = "IMAGES"
 
 [observability]
 [observability.logs]

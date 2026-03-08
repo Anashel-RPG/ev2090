@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { NpcShip } from "../entities/NpcShip";
 import { SoundManager } from "./SoundManager";
-import { getShipDef } from "../ShipCatalog";
+import { getShipDef, getShipTexturePath } from "../ShipCatalog";
 import type { Ship } from "../entities/Ship";
 import type { Planet } from "../entities/Planet";
 import type { RadarContact } from "@/types/game";
@@ -15,8 +15,10 @@ import type { RadarContact } from "@/types/game";
 const RADAR_RANGE = 300;
 const SCANNER_HALF_ANGLE = (30 * Math.PI) / 180; // 60° total -> 30° half
 
+import { CDN_BASE } from "@/config/urls";
+
 // Sound URLs
-const SFX_PING = "https://cdn.ev2090.com/sound/ping.mp3";
+const SFX_PING = `${CDN_BASE}/sound/ping.mp3`;
 
 export class NpcManager {
   private scene: THREE.Scene;
@@ -59,85 +61,109 @@ export class NpcManager {
   /**
    * Main NPC update: scanner detection, hit-point computation, spawning/removal.
    * Returns the forward direction (fwdX, fwdY) and player position for debug beam.
+   * @param fpvTransition 0 = top-down, 1 = fully FPV. Scanner/shield suppressed when > 0.
    */
   update(
     dt: number,
     ship: Ship,
     planets: Planet[],
+    fpvTransition = 0,
   ): { fwdX: number; fwdY: number; px: number; py: number } {
-    // Scanner heading: negate ship rotation (same convention as RadarPanel)
-    const heading = -ship.state.rotation;
-    const nowScannedIds = new Set<string>();
+    // Scanner beam direction uses physics forward (rotation + thrustForwardAngle)
+    // so it always aligns with the direction the ship actually moves.
+    const physicsRot = ship.getHeading();
 
-    // Scanner beam direction = player ship heading (flashlight effect)
-    // Forward direction: (-sin(rot), cos(rot)); negate for "facing the beam" in shader
-    const rot = ship.state.rotation;
-    const scanDirX = Math.sin(rot);    // = -(-sin(rot)) = negate of forward X
-    const scanDirY = -Math.cos(rot);   // = -(cos(rot))  = negate of forward Y
-
-    // Update existing NPCs + scanner cone detection
-    for (const npc of this.npcs) {
-      npc.update(dt);
-
-      // Scanner cone detection (world space)
-      const dx = npc.position.x - ship.position.x;
-      const dy = npc.position.y - ship.position.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < RADAR_RANGE && dist > 2) {
-        // Contact angle using same convention as RadarPanel: atan2(dx, dy)
-        const contactAngle = Math.atan2(dx, dy);
-        let diff = contactAngle - heading;
-        // Normalize to [-PI, PI]
-        while (diff > Math.PI) diff -= 2 * Math.PI;
-        while (diff < -Math.PI) diff += 2 * Math.PI;
-
-        const inCone = Math.abs(diff) < SCANNER_HALF_ANGLE;
-        npc.scanned = inCone;
-
-        // Scan direction = ship heading (flashlight beam), same for all NPCs
-        npc.scanDirection = { x: scanDirX, y: scanDirY };
-
-        if (inCone) {
-          nowScannedIds.add(npc.id);
-          // Play ping only when a new NPC enters the cone
-          if (!this.prevScannedIds.has(npc.id)) {
-            SoundManager.playOnce(SFX_PING, 0.12, 600);
-          }
-        }
-      } else {
-        npc.scanned = false;
-        // Still update beam direction for fading out
-        npc.scanDirection = { x: scanDirX, y: scanDirY };
-      }
-    }
-
-    this.prevScannedIds = nowScannedIds;
-
-    // -- Beam ray: straight line in the ship's forward direction --
-    // Forward direction = actual heading the ship is facing
-    const fwdX = -Math.sin(rot);
-    const fwdY = Math.cos(rot);
+    // Forward direction = actual heading the ship is facing (including thrust angle)
+    const fwdX = -Math.sin(physicsRot);
+    const fwdY = Math.cos(physicsRot);
     const px = ship.position.x;
     const py = ship.position.y;
-    const shipRadius = NpcShip.hitRadius; // configurable via Hit Width slider
 
-    // Compute ray-circle intersection for each scanned NPC
-    // and set the hit point on the NPC for the shield shader
-    for (const npc of this.npcs) {
-      if (npc.scanned) {
-        const hitPt = NpcManager.rayCircleIntersect(
-          px, py, fwdX, fwdY,
-          npc.position.x, npc.position.y, shipRadius,
-        );
-        npc.scanHitPoint = hitPt;
-      } else {
-        // Clear hit point when not scanned (let fade use last value)
+    // In FPV, suppress automatic scanner detection and shield glow.
+    // The user will manually trigger these later; always-on is distracting in cockpit view.
+    const scannerActive = fpvTransition === 0;
+
+    if (scannerActive) {
+      // ── Phase 1: Scanner Cone Detection ──
+      // Detect which NPCs fall inside the player's scanner cone and play
+      // a ping sound when a new contact enters the cone.
+
+      // Scanner heading: negate physics rotation (same convention as RadarPanel)
+      const heading = -physicsRot;
+      const nowScannedIds = new Set<string>();
+
+      // Scanner beam direction = player ship heading (flashlight effect)
+      // Negate for "facing the beam" in shader
+      const scanDirX = Math.sin(physicsRot);
+      const scanDirY = -Math.cos(physicsRot);
+      for (const npc of this.npcs) {
+        npc.update(dt);
+
+        // Scanner cone detection (world space)
+        const dx = npc.position.x - ship.position.x;
+        const dy = npc.position.y - ship.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < RADAR_RANGE && dist > 2) {
+          // Contact angle using same convention as RadarPanel: atan2(dx, dy)
+          const contactAngle = Math.atan2(dx, dy);
+          let diff = contactAngle - heading;
+          // Normalize to [-PI, PI]
+          while (diff > Math.PI) diff -= 2 * Math.PI;
+          while (diff < -Math.PI) diff += 2 * Math.PI;
+
+          const inCone = Math.abs(diff) < SCANNER_HALF_ANGLE;
+          npc.scanned = inCone;
+
+          // Scan direction = ship heading (flashlight beam), same for all NPCs
+          npc.scanDirection = { x: scanDirX, y: scanDirY };
+
+          if (inCone) {
+            nowScannedIds.add(npc.id);
+            // Play ping only when a new NPC enters the cone
+            if (!this.prevScannedIds.has(npc.id)) {
+              SoundManager.playOnce(SFX_PING, 0.12, 600);
+            }
+          }
+        } else {
+          npc.scanned = false;
+          // Still update beam direction for fading out
+          npc.scanDirection = { x: scanDirX, y: scanDirY };
+        }
+      }
+
+      this.prevScannedIds = nowScannedIds;
+
+      // ── Phase 2: Ray-Circle Hit Detection ──
+      // Compute where the scanner beam hits each scanned NPC (for shield shader).
+      const shipRadius = NpcShip.hitRadius; // configurable via Hit Width slider
+
+      // Compute ray-circle intersection for each scanned NPC
+      // and set the hit point on the NPC for the shield shader
+      for (const npc of this.npcs) {
+        if (npc.scanned) {
+          const hitPt = NpcManager.rayCircleIntersect(
+            px, py, fwdX, fwdY,
+            npc.position.x, npc.position.y, shipRadius,
+          );
+          npc.scanHitPoint = hitPt;
+        } else {
+          // Clear hit point when not scanned (let fade use last value)
+          npc.scanHitPoint = null;
+        }
+      }
+    } else {
+      // FPV mode: update NPCs without scanner detection.
+      // Clear all scan state so shields fade out gracefully.
+      for (const npc of this.npcs) {
+        npc.update(dt);
+        npc.scanned = false;
         npc.scanHitPoint = null;
       }
+      this.prevScannedIds = new Set<string>();
     }
 
-    // Remove completed NPCs
+    // ── Phase 3: Cleanup ──
     const done = this.npcs.filter((n) => n.done);
     for (const npc of done) {
       this.scene.remove(npc.mesh);
@@ -145,7 +171,7 @@ export class NpcManager {
     }
     this.npcs = this.npcs.filter((n) => !n.done);
 
-    // Spawn new NPCs
+    // ── Phase 4: Spawning ──
     this.npcSpawnTimer += dt;
     if (
       this.npcSpawnTimer >= NpcManager.NPC_SPAWN_INTERVAL &&
@@ -176,7 +202,7 @@ export class NpcManager {
 
     const color =
       NpcManager.NPC_COLORS[Math.floor(Math.random() * NpcManager.NPC_COLORS.length)];
-    const texturePath = `/models/${shipId}/${shipDef.name}_${color ?? "Blue"}.png`;
+    const texturePath = getShipTexturePath(shipId, shipDef.name, color ?? "Blue");
 
     // Spawn from a random direction, well outside the camera view
     const angle = Math.random() * Math.PI * 2;
@@ -207,10 +233,10 @@ export class NpcManager {
     if (!shipDef) return;
 
     const color = NpcManager.NPC_COLORS[Math.floor(Math.random() * NpcManager.NPC_COLORS.length)];
-    const texturePath = `/models/${shipId}/${shipDef.name}_${color ?? "Blue"}.png`;
+    const texturePath = getShipTexturePath(shipId, shipDef.name, color ?? "Blue");
 
     // Place 12 units ahead of the player ship (in the direction it's facing)
-    const heading = ship.state.rotation;
+    const heading = ship.getHeading();
     const dist = 12;
     const spawnPos = {
       x: ship.position.x - Math.sin(heading) * dist,
@@ -242,7 +268,7 @@ export class NpcManager {
   /** Spawn 4 test ships in a ring around the player: ahead, left, right, behind.
    * Lets you just rotate in place to test beam hitting from all angles. */
   spawnTestRing(ship: Ship) {
-    const heading = ship.state.rotation;
+    const heading = ship.getHeading();
     const dist = 12;
     // Forward, left, right, behind (relative to ship heading)
     const offsets = [0, Math.PI / 2, -Math.PI / 2, Math.PI];
@@ -255,7 +281,7 @@ export class NpcManager {
       if (!shipDef) continue;
 
       const color = NpcManager.NPC_COLORS[Math.floor(Math.random() * NpcManager.NPC_COLORS.length)];
-      const texturePath = `/models/${shipId}/${shipDef.name}_${color ?? "Blue"}.png`;
+      const texturePath = getShipTexturePath(shipId, shipDef.name, color ?? "Blue");
 
       const spawnPos = {
         x: ship.position.x - Math.sin(angle) * dist,
@@ -333,6 +359,47 @@ export class NpcManager {
     if (t < 0) return null; // intersection is behind the ray
 
     return { x: ox + dx * t, y: oy + dy * t };
+  }
+
+  // ─── Comm View Helpers ───
+
+  /** Freeze an NPC by ID (pause its state machine during comm view) */
+  freezeNpc(id: string) {
+    const npc = this.npcs.find((n) => n.id === id);
+    if (npc) npc.frozen = true;
+  }
+
+  /** Unfreeze an NPC by ID (resume normal behavior) */
+  unfreezeNpc(id: string) {
+    const npc = this.npcs.find((n) => n.id === id);
+    if (npc) npc.frozen = false;
+  }
+
+  /** Get an NPC by ID */
+  getNpc(id: string): NpcShip | undefined {
+    return this.npcs.find((n) => n.id === id);
+  }
+
+  /**
+   * Find the NPC closest to a world XY position within a max distance.
+   * Used for click-to-comm detection.
+   */
+  findNearestNpc(worldX: number, worldY: number, maxDist: number): NpcShip | null {
+    let best: NpcShip | null = null;
+    let bestDist = maxDist;
+
+    for (const npc of this.npcs) {
+      if (npc.done) continue;
+      const dx = npc.position.x - worldX;
+      const dy = npc.position.y - worldY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = npc;
+      }
+    }
+
+    return best;
   }
 
   /** Dispose all NPC resources */

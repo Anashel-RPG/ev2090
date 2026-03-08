@@ -1,0 +1,146 @@
+/* ═══════════════════════════════════════
+   Community Board — retro bulletin board
+   ═══════════════════════════════════════ */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.board-header {
+  font-size: 0.9em;
+  letter-spacing: 2px;
+  color: rgba(0, 255, 100, 0.5);
+  margin-bottom: 0.5em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid rgba(0, 255, 100, 0.15);
+}
+
+.board-icon {
+  margin-right: 6px;
+  color: rgba(0, 255, 100, 0.3);
+}
+
+.board-notes {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.board-empty {
+  color: rgba(0, 255, 100, 0.3);
+  font-size: 1em;
+  text-align: center;
+  padding: 1.5em 0;
+  letter-spacing: 1px;
+}
+
+.board-note {
+  border: 1px solid rgba(0, 255, 100, 0.15);
+  padding: 0.4em 0.5em;
+  background: rgba(0, 255, 100, 0.02);
+  transition: border-color 0.2s;
+}
+
+.board-note:hover {
+  border-color: rgba(0, 255, 100, 0.3);
+}
+
+.board-note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.board-note-author {
+  font-size: 0.85em;
+  color: rgba(0, 200, 255, 0.7);
+  letter-spacing: 1px;
+}
+
+.board-note-time {
+  font-size: 0.75em;
+  color: rgba(0, 255, 100, 0.25);
+}
+
+.board-note-text {
+  font-size: 0.9em;
+  color: rgba(0, 255, 100, 0.7);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Input row */
+.board-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  border-top: 1px solid rgba(0, 255, 100, 0.15);
+  padding-top: 0.5em;
+}
+
+.board-prompt {
+  color: rgba(0, 255, 100, 0.4);
+  font-size: 1em;
+}
+
+.board-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 255, 100, 0.2);
+  color: rgba(0, 255, 100, 0.9);
+  font-family: inherit;
+  font-size: 0.9em;
+  padding: 0.3em 2px;
+  outline: none;
+  letter-spacing: 0.5px;
+}
+
+.board-input:focus {
+  border-bottom-color: rgba(0, 255, 100, 0.5);
+}
+
+.board-input::placeholder {
+  color: rgba(0, 255, 100, 0.2);
+}
+
+.board-post-btn {
+  background: transparent;
+  border: 1px solid rgba(0, 255, 100, 0.3);
+  color: rgba(0, 255, 100, 0.7);
+  font-family: inherit;
+  font-size: 0.85em;
+  letter-spacing: 2px;
+  padding: 0.3em 0.6em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.board-post-btn:hover:not(:disabled) {
+  background: rgba(0, 255, 100, 0.1);
+  border-color: rgba(0, 255, 100, 0.6);
+}
+
+.board-post-btn:disabled {
+  color: rgba(0, 255, 100, 0.2);
+  border-color: rgba(0, 255, 100, 0.1);
+  cursor: default;
+}
+
+/* Word counter */
+.board-word-count {
+  font-size: 0.75em;
+  color: rgba(0, 255, 100, 0.3);
+  white-space: nowrap;
+}
+
+.board-word-count-over {
+  color: rgba(255, 80, 80, 0.8);
+}

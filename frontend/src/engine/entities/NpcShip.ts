@@ -17,7 +17,7 @@ import { SHIELD_VERTEX, SHIELD_FRAGMENT } from "../shaders/shield.glsl";
 type NpcState = "APPROACHING" | "DOCKING" | "DOCKED" | "DEPARTING" | "DONE";
 
 const MODEL_SCALE = 0.35;
-const TILT_X = (-22 * Math.PI) / 180;
+const BASE_TILT_X = (-22 * Math.PI) / 180;
 
 // APPROACHING
 const APPROACH_SPEED = 25;
@@ -60,6 +60,14 @@ export class NpcShip {
   name: string;
   done = false;
 
+  /** When true, the NPC pauses its state machine (used during comm mode) */
+  frozen = false;
+
+  /** Get the NPC's current heading (radians) */
+  getDirection(): number { return this.direction; }
+  /** Set the NPC's heading (radians) — used during comm mode choreography */
+  setDirection(radians: number) { this.direction = radians; }
+
   /** Set by Engine when player's scanner cone detects this NPC */
   scanned = false;
   /** Direction from NPC toward player — set by Engine for directional outline */
@@ -88,6 +96,18 @@ export class NpcShip {
   static colorR = 0.7;
   static colorG = 0.3;
   static colorB = 1.0;
+
+  /**
+   * Global tilt override for all NPCs — defaults to the base -22° gameplay tilt.
+   * Engine lerps this to 0 during FPV transition so ships appear level.
+   */
+  static tiltOverride = BASE_TILT_X;
+
+  /**
+   * All planets — set once by Engine after planets are created.
+   * Used for avoidance steering so NPCs don't fly through non-target planets.
+   */
+  static allPlanets: { position: Vec2; radius: number }[] = [];
 
   private npcState: NpcState = "APPROACHING";
   private direction: number;
@@ -140,7 +160,7 @@ export class NpcShip {
 
     this.mesh = new THREE.Group();
     this.mesh.position.set(spawnPos.x, spawnPos.y, 10);
-    this.mesh.rotation.set(TILT_X, 0, this.direction);
+    this.mesh.rotation.set(NpcShip.tiltOverride, 0, this.direction);
 
     // Fresnel shield material — transparent energy shell with hit-point dissipation
     this.shieldMaterial = new THREE.ShaderMaterial({
@@ -201,6 +221,15 @@ export class NpcShip {
   update(dt: number) {
     if (this.done) return;
 
+    // Frozen NPCs skip the state machine (comm view pause)
+    // but still sync tilt and animate scan outline for visual continuity.
+    if (this.frozen) {
+      // Keep tilt in sync with FPV transition (tiltOverride lerps to 0 during FPV)
+      this.mesh.rotation.set(NpcShip.tiltOverride, 0, this.direction);
+      this.updateScanOutline(dt);
+      return;
+    }
+
     switch (this.npcState) {
       case "APPROACHING":
         this.updateApproaching(dt);
@@ -221,7 +250,7 @@ export class NpcShip {
 
     // Sync mesh
     this.mesh.position.set(this.position.x, this.position.y, 10);
-    this.mesh.rotation.set(TILT_X, 0, this.direction);
+    this.mesh.rotation.set(NpcShip.tiltOverride, 0, this.direction);
 
     // Animate scan outline
     this.updateScanOutline(dt);
@@ -254,6 +283,9 @@ export class NpcShip {
 
     this.position.x += (nx * speed + px * curveFactor) * dt;
     this.position.y += (ny * speed + py * curveFactor) * dt;
+
+    // Avoid non-target planets — steer away when too close
+    this.avoidPlanets(dt);
 
     const targetDir = Math.atan2(-dx, dy);
     this.direction = lerpAngle(this.direction, targetDir, dt * 3);
@@ -331,11 +363,30 @@ export class NpcShip {
     this.position.x += moveX * this.departSpeed * dt;
     this.position.y += moveY * this.departSpeed * dt;
 
+    // Avoid non-target planets — steer away when too close
+    this.avoidPlanets(dt);
+
     const sx = this.position.x - this.spawnPos.x;
     const sy = this.position.y - this.spawnPos.y;
     if (Math.sqrt(sx * sx + sy * sy) > DONE_DISTANCE) {
       this.npcState = "DONE";
       this.done = true;
+    }
+  }
+
+  /** Steer away from non-target planets to avoid visual clipping in FPV. */
+  private avoidPlanets(dt: number) {
+    for (const p of NpcShip.allPlanets) {
+      if (p === this.targetPlanet) continue;
+      const pdx = this.position.x - p.position.x;
+      const pdy = this.position.y - p.position.y;
+      const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
+      const avoidRadius = p.radius * 2.5;
+      if (pDist < avoidRadius && pDist > 0) {
+        const avoidStrength = ((avoidRadius - pDist) / avoidRadius) * 15;
+        this.position.x += (pdx / pDist) * avoidStrength * dt;
+        this.position.y += (pdy / pDist) * avoidStrength * dt;
+      }
     }
   }
 

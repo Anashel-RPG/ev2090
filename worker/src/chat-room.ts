@@ -20,12 +20,16 @@ const CORS_HEADERS: Record<string, string> = {
 
 const MAX_MESSAGES = 7;
 const PING_INTERVAL_MS = 15_000;
+const RATE_LIMIT_WINDOW_MS = 10_000; // 10-second sliding window
+const RATE_LIMIT_MAX = 5;            // max 5 messages per window
 
 export class ChatRoom implements DurableObject {
   private messages: ChatMessage[] = [];
   private writers: Set<WritableStreamDefaultWriter<Uint8Array>> = new Set();
   private encoder = new TextEncoder();
   private state: DurableObjectState;
+  /** IP → list of recent message timestamps for rate limiting */
+  private rateLimits: Map<string, number[]> = new Map();
 
   constructor(state: DurableObjectState) {
     this.state = state;
@@ -124,8 +128,32 @@ export class ChatRoom implements DurableObject {
     });
   }
 
+  private isRateLimited(ip: string): boolean {
+    const now = Date.now();
+    const timestamps = this.rateLimits.get(ip) ?? [];
+    const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+    if (recent.length >= RATE_LIMIT_MAX) return true;
+    recent.push(now);
+    this.rateLimits.set(ip, recent);
+    // Prevent unbounded map growth: prune stale IPs every ~100 entries
+    if (this.rateLimits.size > 200) {
+      for (const [key, ts] of this.rateLimits) {
+        if (ts.every((t) => now - t > RATE_LIMIT_WINDOW_MS)) this.rateLimits.delete(key);
+      }
+    }
+    return false;
+  }
+
   private async handleMessage(request: Request): Promise<Response> {
     try {
+      const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+      if (this.isRateLimited(ip)) {
+        return new Response(JSON.stringify({ error: "Too many messages" }), {
+          status: 429,
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+        });
+      }
+
       const body = (await request.json()) as {
         nickname?: string;
         text?: string;

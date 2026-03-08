@@ -1,4 +1,10 @@
+/** Ship selector panel — clickable ship list in the sidebar for switching active ship. */
 import { SHIP_CATALOG } from "@/engine/ShipCatalog";
+
+/** Same curated starter ships shown on the intro screen */
+const STARTER_SHIPS = SHIP_CATALOG.filter((s) =>
+  ["striker", "bob", "challenger"].includes(s.id)
+);
 
 interface Props {
   currentShipId: string;
@@ -10,7 +16,7 @@ export function ShipSelectorPanel({ currentShipId, onShipChange }: Props) {
     <div className="panel">
       <div className="panel-header">SHIP SELECTOR</div>
       <div className="ship-list">
-        {SHIP_CATALOG.map((ship) => (
+        {STARTER_SHIPS.map((ship) => (
           <button
             key={ship.id}
             className={`ship-item ${ship.id === currentShipId ? "active" : ""}`}

@@ -19,7 +19,8 @@
   --sidebar-width: 240px;
   --sidebar-bg-opacity: 0.60;
   --sidebar-blur: 40px;
-  --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  --font-sans: "Rajdhani", sans-serif;
+  --font-mono: "Share Tech Mono", monospace;
 }
 
 * {
@@ -37,7 +38,7 @@ body,
   overflow: hidden;
   background: var(--bg-deep);
   color: var(--text-primary);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
 }
 

@@ -1,0 +1,965 @@
+/* ─── Forge Create Panel ─── */
+
+/* Column layout — fills the overlay space */
+.forge-create-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-y: auto;
+  background-color: #000;
+  /* Nebula texture at ~10% — layered gradient on top dims the image */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)),
+    url("https://cdn.ev2090.com/images/nebula.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: local;
+}
+
+.forge-create-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Hero banner ─── */
+
+.forge-hero {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #020408;
+  z-index: 1;
+  transition: height 0.3s ease;
+}
+
+/* Phase 2 — reduced height */
+.forge-hero--compact {
+  height: 120px;
+}
+
+/* Hero render — actual ship cinematic image */
+.forge-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+
+/* Fallback gradient when no hero renders are loaded yet */
+.forge-hero-fallback {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 60% 50%, rgba(0, 80, 160, 0.25) 0%, transparent 70%),
+              linear-gradient(180deg, rgba(4, 8, 18, 1) 0%, rgba(8, 14, 30, 1) 100%);
+}
+
+/* CRT scanlines */
+.forge-hero-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 200, 255, 0.012) 2px,
+    rgba(0, 200, 255, 0.012) 4px
+  );
+  mix-blend-mode: screen;
+}
+
+/* Text overlay — strong bottom gradient so title is legible */
+.forge-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 48px 20px;
+  background: linear-gradient(
+    to top,
+    rgba(4, 4, 12, 0.88) 0%,
+    rgba(4, 4, 12, 0.45) 45%,
+    rgba(4, 4, 12, 0.1) 75%,
+    transparent 100%
+  );
+}
+
+/* Gold corner accent */
+.forge-hero-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(to right, rgba(240, 180, 41, 0.7), transparent);
+}
+
+/* Rajdhani title — gold in phase 1, white in phase 2 */
+.forge-hero-title {
+  font-family: var(--font-sans);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #f0b429;
+  text-shadow: 0 0 32px rgba(240, 180, 41, 0.4), 0 2px 12px rgba(0, 0, 0, 0.9);
+  margin-bottom: 5px;
+}
+
+.forge-hero-title--white {
+  color: #ffffff;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.15), 0 2px 12px rgba(0, 0, 0, 0.9);
+}
+
+/* Subtitle — "SELECT COMMISSION TYPE" */
+.forge-hero-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(0, 200, 255, 0.45);
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════
+   PHASE 1 — Big centered selection cards
+   ══════════════════════════════════════════════════════ */
+
+.forge-select-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 40px 48px 48px;
+  transition: opacity 0.28s ease;
+  opacity: 1;
+}
+
+.forge-select-section--out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.forge-select-label {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.forge-select-cards {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.forge-select-card {
+  width: 290px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 32px 28px 28px;
+  background: rgb(6, 8, 20);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 2px solid rgba(240, 180, 41, 0.35);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
+}
+
+.forge-select-card:hover,
+.forge-select-card:focus-visible {
+  border-top-color: rgba(240, 180, 41, 0.9);
+  border-color: rgba(240, 180, 41, 0.22);
+  box-shadow:
+    0 -8px 28px rgba(240, 180, 41, 0.2),
+    0 4px 32px rgba(0, 0, 0, 0.6);
+  background: rgba(6, 8, 24, 0.98);
+}
+
+.forge-select-card-icon {
+  color: rgba(0, 200, 255, 0.45);
+  margin-bottom: 22px;
+  display: flex;
+  transition: color 0.2s;
+}
+
+.forge-select-card:hover .forge-select-card-icon,
+.forge-select-card:focus-visible .forge-select-card-icon {
+  color: #f0b429;
+}
+
+.forge-select-card-title {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 14px;
+  line-height: 1;
+}
+
+.forge-select-card-sub {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.forge-select-card-cta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: rgba(0, 200, 255, 0.55);
+  padding-top: 18px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  transition: color 0.2s;
+}
+
+.forge-select-card:hover .forge-select-card-cta,
+.forge-select-card:focus-visible .forge-select-card-cta {
+  color: rgba(240, 180, 41, 0.85);
+}
+
+/* ══════════════════════════════════════════════════════
+   PHASE 2 — Small mode nav chips (top-right, post-selection)
+   ══════════════════════════════════════════════════════ */
+
+.forge-mode-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 48px;
+  margin-top: -46px;
+  position: relative;
+  z-index: 2;
+  animation: forge-fade-in 0.35s ease;
+}
+
+.forge-mode-chip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(4, 4, 16, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 2px solid rgba(240, 180, 41, 0.35);
+  border-right: 1px solid rgba(0, 200, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 200, 255, 0.1);
+  border-left: 1px solid rgba(0, 200, 255, 0.1);
+  cursor: pointer;
+  transition: border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.forge-mode-chip--active {
+  border-top-color: rgba(240, 180, 41, 0.85);
+  box-shadow: 0 -4px 16px rgba(240, 180, 41, 0.14);
+}
+
+.forge-mode-chip--dimmed {
+  opacity: 0.6;
+}
+
+.forge-mode-chip--dimmed:hover,
+.forge-mode-chip--dimmed:focus-visible {
+  opacity: 0.92;
+}
+
+.forge-mode-chip-icon {
+  color: rgba(0, 200, 255, 0.45);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.forge-mode-chip--active .forge-mode-chip-icon {
+  color: #f0b429;
+}
+
+.forge-mode-chip-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+/* ─── Shared entrance animation ─── */
+
+@keyframes forge-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Unique Bonus badge (3D Artist card) ─── */
+
+/* Wrapper: hover triggers tooltip, relative for floating tooltip positioning */
+.forge-unique-bonus-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Space below so both cards' CTAs sit at the same vertical position */
+  margin-bottom: 24px;
+  cursor: default;
+}
+
+.forge-unique-bonus-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #f0b429;
+  text-shadow: 0 0 8px rgba(240, 180, 41, 0.5);
+  background: rgba(240, 180, 41, 0.08);
+  border: 1px solid rgba(240, 180, 41, 0.28);
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* Circular "i" indicator — hover target, not a button */
+.forge-unique-bonus-info-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  border-radius: 50%;
+  color: rgba(0, 200, 255, 0.6);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-style: italic;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Floating tooltip — absolutely positioned above the badge, no layout impact on card */
+.forge-unique-bonus-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  width: 270px;
+  background: rgb(6, 10, 24);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid rgba(240, 180, 41, 0.55);
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: rgba(210, 230, 255, 0.88);
+  line-height: 1.75;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.85),
+    0 2px 12px rgba(0, 0, 0, 0.6),
+    0 0 32px rgba(240, 180, 41, 0.05);
+  z-index: 50;
+  pointer-events: none;
+  animation: forge-tooltip-in 0.15s ease-out;
+}
+
+@keyframes forge-tooltip-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Form content area (appears below nav chips after selection) ─── */
+
+.forge-create-inner {
+  max-width: 640px;
+  margin: 32px auto 48px;
+  padding: 0 48px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.forge-create-inner--anim {
+  animation: forge-fade-in 0.35s ease;
+}
+
+/* ─── Step headings ─── */
+
+.forge-step-title {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 700;
+  color: #e8f4ff;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.forge-subtitle {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: rgba(0, 200, 255, 0.4);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+/* ─── Inputs ─── */
+
+.forge-input-group {
+  margin-bottom: 20px;
+}
+
+.forge-input-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.forge-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(100, 180, 255, 0.15);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: #cce0ff;
+  padding: 13px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.forge-input:focus {
+  border-color: rgba(100, 180, 255, 0.4);
+  background: rgba(100, 180, 255, 0.02);
+}
+
+.forge-input::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.forge-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: var(--font-mono);
+}
+
+.forge-lore-textarea {
+  min-height: 130px;
+}
+
+.forge-lore-textarea:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Styled select — matches input field */
+.forge-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(100,180,255,0.5)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.forge-select option {
+  background: rgb(6, 8, 20);
+  color: #cce0ff;
+}
+
+/* Label row — label + checkbox side by side */
+.forge-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.forge-label-row .forge-input-label {
+  margin-bottom: 0;
+}
+
+.forge-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(0, 200, 255, 0.55);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.forge-checkbox-label:hover {
+  color: rgba(0, 200, 255, 0.85);
+}
+
+.forge-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  background: rgba(0, 200, 255, 0.03);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.forge-checkbox:checked {
+  background: rgba(0, 200, 255, 0.15);
+  border-color: rgba(0, 200, 255, 0.7);
+}
+
+.forge-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  width: 4px;
+  height: 7px;
+  border: 1.5px solid rgba(0, 200, 255, 0.9);
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.forge-char-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: right;
+  margin-top: 6px;
+}
+
+/* ─── Buttons ─── */
+
+.forge-btn-primary {
+  width: 100%;
+  background: rgba(100, 180, 255, 0.08);
+  border: 1px solid rgba(100, 180, 255, 0.28);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: #88ccff;
+  padding: 16px;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  margin-top: 8px;
+}
+
+.forge-btn-primary:hover:not(:disabled) {
+  background: rgba(100, 180, 255, 0.15);
+  border-color: rgba(100, 180, 255, 0.5);
+  box-shadow: 0 0 16px rgba(100, 180, 255, 0.1);
+}
+
+.forge-btn-primary:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.forge-btn-secondary {
+  width: 100%;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 14px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: color 0.2s, border-color 0.2s;
+  margin-top: 10px;
+}
+
+.forge-btn-secondary:hover {
+  color: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.forge-btn-fly {
+  width: 100%;
+  background: rgba(80, 255, 120, 0.07);
+  border: 1px solid rgba(80, 255, 120, 0.25);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: #66ff88;
+  padding: 18px;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  margin-top: 10px;
+}
+
+.forge-btn-fly:hover {
+  background: rgba(80, 255, 120, 0.14);
+  border-color: rgba(80, 255, 120, 0.45);
+  box-shadow: 0 0 20px rgba(80, 255, 120, 0.1);
+}
+
+/* ─── Upload drop zone ─── */
+
+.forge-upload-drop {
+  display: block;
+  border: 1px dashed rgba(0, 200, 255, 0.2);
+  background: rgba(0, 200, 255, 0.02);
+  padding: 40px 24px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.forge-upload-drop:hover {
+  border-color: rgba(240, 180, 41, 0.3);
+  background: rgba(240, 180, 41, 0.03);
+}
+
+.forge-upload-drop-icon {
+  color: rgba(0, 200, 255, 0.35);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.forge-upload-drop-label {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.12em;
+  margin-bottom: 5px;
+}
+
+.forge-upload-drop-hint {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.forge-upload-file-input {
+  display: none;
+}
+
+.forge-upload-selected {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(0, 200, 255, 0.65);
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(0, 200, 255, 0.04);
+  border: 1px solid rgba(0, 200, 255, 0.12);
+}
+
+.forge-upload-soon {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.06em;
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ─── Color row — two dropdowns side by side ─── */
+
+.forge-color-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.forge-color-half {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── Concept image ─── */
+
+.forge-concept-img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border: 1px solid rgba(100, 180, 255, 0.1);
+  margin-bottom: 16px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.forge-concept-pair {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.forge-concept-slot {
+  flex: 1;
+  min-width: 0;
+}
+
+.forge-concept-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: rgba(0, 200, 255, 0.4);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.forge-concept-img--half {
+  max-height: 240px;
+  margin-bottom: 0;
+}
+
+.forge-concept-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.forge-concept-actions > button {
+  flex: 1;
+}
+
+/* ─── Progress ─── */
+
+.forge-progress-section {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.forge-progress-stage {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #88ccff;
+  letter-spacing: 0.15em;
+  margin-bottom: 20px;
+}
+
+.forge-progress-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.forge-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #336699, #88ccff);
+  transition: width 0.5s ease;
+  box-shadow: 0 0 8px rgba(136, 204, 255, 0.3);
+}
+
+.forge-progress-pct {
+  font-family: var(--font-sans);
+  font-size: 56px;
+  font-weight: 700;
+  color: #88ccff;
+  margin-bottom: 6px;
+  text-shadow: 0 0 30px rgba(136, 204, 255, 0.3);
+}
+
+.forge-progress-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.22);
+  margin-top: 10px;
+  letter-spacing: 0.06em;
+}
+
+.forge-progress-elapsed {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  margin-top: 6px;
+}
+
+/* ─── Complete ─── */
+
+.forge-complete-class {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(100, 180, 255, 0.5);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.forge-complete-lore {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+
+/* ─── Stats ─── */
+
+.forge-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.forge-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.forge-stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  width: 80px;
+  letter-spacing: 0.06em;
+}
+
+.forge-stat-bar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.forge-stat-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #336699, #88ccff);
+  transition: width 0.4s ease;
+}
+
+.forge-stat-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  width: 28px;
+  text-align: right;
+}
+
+/* ─── Error ─── */
+
+.forge-error {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #ff7755;
+  background: rgba(255, 80, 60, 0.07);
+  border: 1px solid rgba(255, 80, 60, 0.2);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ─── Spinner ─── */
+
+.forge-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.forge-spinner-dots {
+  font-size: 22px;
+  color: #88ccff;
+  animation: forge-pulse 1.5s infinite;
+  letter-spacing: 6px;
+}
+
+@keyframes forge-pulse {
+  0%, 100% { opacity: 0.25; }
+  50%       { opacity: 1; }
+}
+
+.forge-spinner-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 16px;
+  letter-spacing: 0.15em;
+}
+
+/* ─── Admin badge (hidden) ─── */
+.forge-admin-badge { display: none; }
+
+/* ─── Responsive ─── */
+
+@media (max-width: 900px) {
+  .forge-hero-overlay {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .forge-mode-nav {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .forge-select-section {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .forge-create-inner {
+    padding: 0 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .forge-hero {
+    height: 120px;
+  }
+
+  .forge-hero-title {
+    font-size: 26px;
+  }
+
+  .forge-hero-overlay {
+    padding: 0 20px 16px;
+  }
+
+  .forge-select-section {
+    padding: 24px 20px 32px;
+    gap: 20px;
+  }
+
+  .forge-select-cards {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .forge-select-card {
+    width: 100%;
+  }
+
+  .forge-mode-nav {
+    padding: 0 20px;
+    gap: 8px;
+  }
+
+  .forge-create-inner {
+    padding: 0 20px;
+    margin-top: 20px;
+  }
+}

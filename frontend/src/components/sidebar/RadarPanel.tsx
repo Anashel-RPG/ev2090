@@ -4,7 +4,7 @@ import "./radar.css";
 
 interface Props {
   shipPosition: Vec2;
-  shipRotation: number;
+  shipHeading: number;
   contacts: RadarContact[];
   size?: number;
   compact?: boolean;
@@ -35,16 +35,15 @@ function isInCone(
   return Math.abs(diff) < halfAngle;
 }
 
-export function RadarPanel({ shipPosition, shipRotation, contacts, size, compact }: Props) {
+export function RadarPanel({ shipPosition, shipHeading: physicsHeading, contacts, size, compact }: Props) {
   const radarSize = size ?? RADAR_SIZE;
   const center = radarSize / 2;
   const coneRadius = (center - 4) * SCANNER_REACH;
 
   // Build the scanner cone SVG path (a pie-slice / wedge)
   const halfAngle = (SCANNER_ANGLE / 2) * (Math.PI / 180);
-  // Ship heading: rotation=0 is up. In SVG, up = -Y.
-  // We negate shipRotation because the game uses CCW-positive.
-  const heading = -shipRotation;
+  // Physics heading: 0 = up. In SVG, up = -Y → negate for display.
+  const heading = -physicsHeading;
 
   const leftAngle = heading - halfAngle;
   const rightAngle = heading + halfAngle;

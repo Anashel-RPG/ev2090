@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_CHAT_API_URL?: string;
+  /** Admin API key — enables ship creation/deletion in the hangar. */
+  readonly VITE_FORGE_API_KEY?: string;
 }
 
 interface ImportMeta {

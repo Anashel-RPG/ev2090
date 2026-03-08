@@ -18,5 +18,13 @@ export function useConfigSlider({ initial, onChange }: ConfigSliderOptions) {
     onChange(defaultValue);
   }, [onChange]);
 
-  return { value, handleChange, reset };
+  /** Update slider display without pushing to engine (for sync from mouse changes) */
+  const syncFromEngine = useCallback((engineValue: number) => {
+    setValue((prev) => {
+      // Only update if meaningfully different (avoid re-render churn)
+      return Math.abs(prev - engineValue) > 0.001 ? engineValue : prev;
+    });
+  }, []);
+
+  return { value, handleChange, reset, syncFromEngine };
 }

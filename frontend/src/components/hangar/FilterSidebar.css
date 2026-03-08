@@ -1,0 +1,78 @@
+/* ─── Filter Sidebar ─── */
+
+.hangar-filter-sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  height: 100%;
+  background: rgba(2, 6, 14, 0.95);
+  border-right: 1px solid rgba(255,255,255,0.055);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.hangar-filter-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,200,255,0.06);
+  flex-shrink: 0;
+}
+
+.hangar-filter-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  flex: 1;
+}
+
+/* ─── Range slider ─── */
+
+.hangar-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.hangar-range::-webkit-slider-runnable-track {
+  height: 2px;
+}
+
+.hangar-range::-moz-range-track {
+  height: 2px;
+  background: rgba(255,255,255,0.07);
+}
+
+.hangar-range::-moz-range-progress {
+  height: 2px;
+  background: rgba(0,200,255,0.55);
+}
+
+.hangar-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  background: #00c8ff;
+  box-shadow: 0 0 6px rgba(0, 200, 255, 0.7);
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.hangar-range::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  background: #00c8ff;
+  border: none;
+  box-shadow: 0 0 6px rgba(0, 200, 255, 0.7);
+  cursor: pointer;
+}
+
+/* ─── Responsive: hide sidebar on narrow screens ─── */
+
+@media (max-width: 768px) {
+  .hangar-filter-sidebar {
+    display: none;
+  }
+}

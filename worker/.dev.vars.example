@@ -1,0 +1,20 @@
+# ─────────────────────────────────────────────────────────────
+# Worker Local Development Secrets
+# Copy to .dev.vars for local development
+# These are NOT deployed — production secrets use `wrangler secret put`
+# ─────────────────────────────────────────────────────────────
+
+# Admin API key (required for /api/admin/* endpoints)
+ADMIN_API_KEY = "your_admin_api_key"
+
+# Ship Forge API key (required for forge admin operations)
+FORGE_API_KEY = "your_forge_api_key"
+
+# Ship Forge feature flags
+FORGE_DEV_MODE = "true"
+FORGE_LOCKED = "false"
+
+# External AI service keys (required for ship generation pipeline)
+# MESHY_API_KEY = "your_meshy_api_key"       # MeshyAI 3D model generation
+# GEMINI_API_KEY = "your_gemini_api_key"     # Google Gemini image generation
+# GROK_API = "your_grok_api_key"             # xAI Grok prompt enhancement

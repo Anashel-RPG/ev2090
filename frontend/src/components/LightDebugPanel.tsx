@@ -18,6 +18,11 @@ interface Props {
   getDebugView: () => DebugView;
   onSetBeamVisible: (visible: boolean) => void;
   isBeamVisible: () => boolean;
+  // Authoring tools
+  onOpenHeroShot?: () => void;
+  onOpenHardpointEditor?: () => void;
+  // Per-ship tuning
+  currentShipId?: string;
   // Camera controls (optional for backward compat)
   fps?: number;
   onSetZoom?: (factor: number) => void;
@@ -89,8 +94,8 @@ const DEFAULTS = {
   modelRz: 0,
   sidebarOpacity: 0.60,
   sidebarBlur: 40,
-  bgImageOpacity: 0.13,
-  bgNebulaOpacity: 0.10,
+  bgImageOpacity: 0.14,
+  bgNebulaOpacity: 0.20,
   shieldScale: 0.315,
   fresnelPow: 0.1,
   dissipation: 2.3,
@@ -105,6 +110,14 @@ const DEFAULTS = {
   zoom: 1,
   offsetX: 0,
   offsetY: 0,
+  brightness: 1.34,
+  contrast: 0.98,
+  exposure: 1.16,
+  bloomStrength: 0.41,
+  bloomRadius: 1.62,
+  bloomThreshold: 0.69,
+  vignetteIntensity: 0,
+  vignetteSoftness: 0,
 };
 
 function getNestedValue(config: LightConfig, light: string, prop: string): number {
@@ -125,6 +138,9 @@ export function LightDebugPanel({
   getDebugView,
   onSetBeamVisible,
   isBeamVisible,
+  onOpenHeroShot,
+  onOpenHardpointEditor,
+  currentShipId,
   fps,
   onSetZoom,
   getZoom: _getZoom,
@@ -170,6 +186,18 @@ export function LightDebugPanel({
   const baseOpacity = useConfigSlider({ initial: DEFAULTS.baseOpacity, onChange: (v) => updateLight("scanOutline", "baseOpacity", v) });
   const hitOpacity = useConfigSlider({ initial: DEFAULTS.hitOpacity, onChange: (v) => updateLight("scanOutline", "hitOpacity", v) });
   const hitRadius = useConfigSlider({ initial: DEFAULTS.hitRadius, onChange: (v) => updateLight("scanOutline", "hitRadius", v) });
+
+  // Color correction (post-processing)
+  const ccBrightness = useConfigSlider({ initial: DEFAULTS.brightness, onChange: (v) => updateLight("colorCorrection", "brightness", v) });
+  const ccContrast = useConfigSlider({ initial: DEFAULTS.contrast, onChange: (v) => updateLight("colorCorrection", "contrast", v) });
+  const ccExposure = useConfigSlider({ initial: DEFAULTS.exposure, onChange: (v) => updateLight("colorCorrection", "exposure", v) });
+
+  // Bloom & Vignette (post-processing)
+  const ppBloomStrength = useConfigSlider({ initial: DEFAULTS.bloomStrength, onChange: (v) => updateLight("colorCorrection", "bloomStrength", v) });
+  const ppBloomRadius = useConfigSlider({ initial: DEFAULTS.bloomRadius, onChange: (v) => updateLight("colorCorrection", "bloomRadius", v) });
+  const ppBloomThreshold = useConfigSlider({ initial: DEFAULTS.bloomThreshold, onChange: (v) => updateLight("colorCorrection", "bloomThreshold", v) });
+  const ppVignetteIntensity = useConfigSlider({ initial: DEFAULTS.vignetteIntensity, onChange: (v) => updateLight("colorCorrection", "vignetteIntensity", v) });
+  const ppVignetteSoftness = useConfigSlider({ initial: DEFAULTS.vignetteSoftness, onChange: (v) => updateLight("colorCorrection", "vignetteSoftness", v) });
 
   // Ship model
   const shipTilt = useConfigSlider({ initial: DEFAULTS.shipTilt, onChange: (v) => updateLight("shipTilt", "x", (v * Math.PI) / 180) });
@@ -251,6 +279,20 @@ export function LightDebugPanel({
     onSetCameraOffset?.(DEFAULTS.offsetX, DEFAULTS.offsetY);
   }, [cameraZoom, cameraOffsetX, cameraOffsetY, onSetZoom, onSetCameraOffset]);
 
+  const resetColorCorrection = useCallback(() => {
+    ccBrightness.reset(DEFAULTS.brightness);
+    ccContrast.reset(DEFAULTS.contrast);
+    ccExposure.reset(DEFAULTS.exposure);
+  }, [ccBrightness, ccContrast, ccExposure]);
+
+  const resetPostProcessing = useCallback(() => {
+    ppBloomStrength.reset(DEFAULTS.bloomStrength);
+    ppBloomRadius.reset(DEFAULTS.bloomRadius);
+    ppBloomThreshold.reset(DEFAULTS.bloomThreshold);
+    ppVignetteIntensity.reset(DEFAULTS.vignetteIntensity);
+    ppVignetteSoftness.reset(DEFAULTS.vignetteSoftness);
+  }, [ppBloomStrength, ppBloomRadius, ppBloomThreshold, ppVignetteIntensity, ppVignetteSoftness]);
+
   const resetSidebarGlass = useCallback(() => {
     sidebarOpacity.reset(DEFAULTS.sidebarOpacity);
     sidebarBlur.reset(DEFAULTS.sidebarBlur);
@@ -330,11 +372,23 @@ export function LightDebugPanel({
         offsetX: cameraOffsetX.value,
         offsetY: cameraOffsetY.value,
       },
+      colorCorrection: {
+        brightness: +ccBrightness.value.toFixed(2),
+        contrast: +ccContrast.value.toFixed(2),
+        exposure: +ccExposure.value.toFixed(2),
+      },
+      postProcessing: {
+        bloomStrength: +ppBloomStrength.value.toFixed(2),
+        bloomRadius: +ppBloomRadius.value.toFixed(2),
+        bloomThreshold: +ppBloomThreshold.value.toFixed(2),
+        vignetteIntensity: +ppVignetteIntensity.value.toFixed(2),
+        vignetteSoftness: +ppVignetteSoftness.value.toFixed(2),
+      },
     };
     navigator.clipboard.writeText(JSON.stringify(output, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [config, shipTilt, modelRx, modelRy, modelRz, sidebarOpacity, sidebarBlur, bgImageOpacity, bgNebulaOpacity, shieldScale, fresnelPow, dissipation, ovalX, ovalY, baseOpacity, hitOpacity, hitRadius, scanColorR, scanColorG, scanColorB, cameraZoom, cameraOffsetX, cameraOffsetY]);
+  }, [config, shipTilt, modelRx, modelRy, modelRz, sidebarOpacity, sidebarBlur, bgImageOpacity, bgNebulaOpacity, shieldScale, fresnelPow, dissipation, ovalX, ovalY, baseOpacity, hitOpacity, hitRadius, scanColorR, scanColorG, scanColorB, cameraZoom, cameraOffsetX, cameraOffsetY, ccBrightness, ccContrast, ccExposure, ppBloomStrength, ppBloomRadius, ppBloomThreshold, ppVignetteIntensity, ppVignetteSoftness, currentShipId]);
 
   // Hidden by default -- no toggle button rendered
   if (!enabled || !config) return null;
@@ -390,6 +444,15 @@ export function LightDebugPanel({
               </button>
             ))}
           </div>
+          {/* Authoring tool launchers */}
+          <div className="debug-button-row">
+            <button className="debug-action-btn" onClick={onOpenHeroShot}>
+              HERO SHOT
+            </button>
+            <button className="debug-action-btn" onClick={onOpenHardpointEditor}>
+              HARDPOINTS
+            </button>
+          </div>
         </CollapsibleSection>
 
         {/* ── CAMERA ── */}
@@ -432,6 +495,120 @@ export function LightDebugPanel({
               className="debug-slider"
             />
             <span className="debug-slider-value">{cameraOffsetY.value.toFixed(1)}</span>
+          </div>
+        </CollapsibleSection>
+
+        {/* ── COLOR CORRECTION ── */}
+        <CollapsibleSection title="COLOR CORRECTION" onReset={resetColorCorrection}>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Bright</span>
+            <input
+              type="range"
+              min={0.5}
+              max={2}
+              step={0.02}
+              value={ccBrightness.value}
+              onChange={(e) => ccBrightness.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ccBrightness.value.toFixed(2)}</span>
+          </div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Contrast</span>
+            <input
+              type="range"
+              min={0.5}
+              max={2}
+              step={0.02}
+              value={ccContrast.value}
+              onChange={(e) => ccContrast.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ccContrast.value.toFixed(2)}</span>
+          </div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Exposure</span>
+            <input
+              type="range"
+              min={0.1}
+              max={3}
+              step={0.02}
+              value={ccExposure.value}
+              onChange={(e) => ccExposure.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ccExposure.value.toFixed(2)}</span>
+          </div>
+        </CollapsibleSection>
+
+        {/* ── POST-PROCESSING (Bloom + Vignette) ── */}
+        <CollapsibleSection title="POST-PROCESSING" onReset={resetPostProcessing}>
+          <div className="debug-group-sublabel">BLOOM</div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Strength</span>
+            <input
+              type="range"
+              min={0}
+              max={3}
+              step={0.01}
+              value={ppBloomStrength.value}
+              onChange={(e) => ppBloomStrength.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ppBloomStrength.value.toFixed(2)}</span>
+          </div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Radius</span>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.01}
+              value={ppBloomRadius.value}
+              onChange={(e) => ppBloomRadius.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ppBloomRadius.value.toFixed(2)}</span>
+          </div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Threshold</span>
+            <input
+              type="range"
+              min={0}
+              max={1.5}
+              step={0.01}
+              value={ppBloomThreshold.value}
+              onChange={(e) => ppBloomThreshold.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ppBloomThreshold.value.toFixed(2)}</span>
+          </div>
+          <div className="debug-group-sublabel">VIGNETTE</div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Intensity</span>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.01}
+              value={ppVignetteIntensity.value}
+              onChange={(e) => ppVignetteIntensity.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ppVignetteIntensity.value.toFixed(2)}</span>
+          </div>
+          <div className="debug-slider-row">
+            <span className="debug-slider-label">Softness</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={ppVignetteSoftness.value}
+              onChange={(e) => ppVignetteSoftness.handleChange(Number(e.target.value))}
+              className="debug-slider"
+            />
+            <span className="debug-slider-value">{ppVignetteSoftness.value.toFixed(2)}</span>
           </div>
         </CollapsibleSection>
 

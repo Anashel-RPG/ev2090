@@ -3,10 +3,20 @@
 // Singleton cache for GLTF models and textures.
 // Prevents re-parsing GLTFs and re-compiling shaders on every ship spawn,
 // which causes frame freezes / stuttering.
+//
+// CDN URLs (https://) are routed through AssetCache (IndexedDB) for
+// persistent caching across browser sessions. Local paths (/) go direct.
 // ---------------------------------------------------------------------------
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { AssetCache } from "./AssetCache";
+
+/** Check if a path is a remote CDN URL (vs local dev path) */
+function isCdnUrl(path: string): boolean {
+  return path.startsWith("https://");
+}
 
 class ModelCacheService {
   /** Parsed GLTF scene originals (never added to a live scene directly) */
@@ -19,8 +29,19 @@ class ModelCacheService {
   private texturePromises = new Map<string, Promise<THREE.Texture>>();
 
   /** Single shared loader instances — avoids re-creating internals */
-  private gltfLoader = new GLTFLoader();
+  private gltfLoader: GLTFLoader;
   private texLoader = new THREE.TextureLoader();
+
+  constructor() {
+    this.gltfLoader = new GLTFLoader();
+
+    // Draco decoder for compressed GLB files (e.g. bridge.glb)
+    const dracoLoader = new DRACOLoader();
+    // Use the Draco decoder from three.js examples (bundled by Vite)
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+    dracoLoader.setDecoderConfig({ type: "js" });
+    this.gltfLoader.setDRACOLoader(dracoLoader);
+  }
 
   // ──────────────── Model loading ────────────────
 
@@ -33,7 +54,37 @@ class ModelCacheService {
   }
 
   /**
+   * Preload assets with progress reporting. Loads in batches to
+   * avoid overwhelming the browser with concurrent downloads.
+   */
+  async preloadWithProgress(
+    paths: string[],
+    onProgress: (loaded: number, total: number) => void,
+  ): Promise<void> {
+    const total = paths.length;
+    let loaded = 0;
+    onProgress(0, total);
+
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < paths.length; i += BATCH_SIZE) {
+      const batch = paths.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async (path) => {
+          try {
+            await this.loadModel(path);
+          } catch (err) {
+            console.warn("preloadWithProgress: failed to load", path, err);
+          }
+          loaded++;
+          onProgress(loaded, total);
+        }),
+      );
+    }
+  }
+
+  /**
    * Load a model (or return cached original).
+   * CDN URLs are fetched through IndexedDB cache first.
    * The returned Group is the cached original — do NOT add it to a scene.
    */
   private loadModel(path: string): Promise<THREE.Group> {
@@ -43,23 +94,42 @@ class ModelCacheService {
     let pending = this.gltfPromises.get(path);
     if (pending) return pending;
 
-    pending = new Promise<THREE.Group>((resolve, reject) => {
+    pending = this.loadModelFromSource(path);
+    this.gltfPromises.set(path, pending);
+    return pending;
+  }
+
+  private async loadModelFromSource(path: string): Promise<THREE.Group> {
+    let loadUrl = path;
+
+    // For CDN URLs, route through IndexedDB cache
+    if (isCdnUrl(path)) {
+      try {
+        loadUrl = await AssetCache.fetchCached(path);
+      } catch (err) {
+        console.warn("AssetCache fetch failed, loading direct:", path, err);
+        loadUrl = path;
+      }
+    }
+
+    return new Promise<THREE.Group>((resolve, reject) => {
       this.gltfLoader.load(
-        path,
+        loadUrl,
         (gltf) => {
           this.gltfCache.set(path, gltf.scene);
           this.gltfPromises.delete(path);
+          // Revoke blob URL if we used one
+          if (loadUrl !== path) AssetCache.revokeBlobUrl(loadUrl);
           resolve(gltf.scene);
         },
         undefined,
         (err) => {
           this.gltfPromises.delete(path);
+          if (loadUrl !== path) AssetCache.revokeBlobUrl(loadUrl);
           reject(err);
         },
       );
     });
-    this.gltfPromises.set(path, pending);
-    return pending;
   }
 
   /**
@@ -122,6 +192,7 @@ class ModelCacheService {
 
   /**
    * Load a texture (or return cached). GLTF-compatible settings applied.
+   * CDN URLs are fetched through IndexedDB cache first.
    */
   loadTexture(path: string): Promise<THREE.Texture> {
     const cached = this.textureCache.get(path);
@@ -130,25 +201,43 @@ class ModelCacheService {
     let pending = this.texturePromises.get(path);
     if (pending) return pending;
 
-    pending = new Promise<THREE.Texture>((resolve, reject) => {
+    pending = this.loadTextureFromSource(path);
+    this.texturePromises.set(path, pending);
+    return pending;
+  }
+
+  private async loadTextureFromSource(path: string): Promise<THREE.Texture> {
+    let loadUrl = path;
+
+    // For CDN URLs, route through IndexedDB cache
+    if (isCdnUrl(path)) {
+      try {
+        loadUrl = await AssetCache.fetchCached(path);
+      } catch (err) {
+        console.warn("AssetCache texture fetch failed, loading direct:", path, err);
+        loadUrl = path;
+      }
+    }
+
+    return new Promise<THREE.Texture>((resolve, reject) => {
       this.texLoader.load(
-        path,
+        loadUrl,
         (tex) => {
           tex.colorSpace = THREE.SRGBColorSpace;
           tex.flipY = false; // GLTF convention
           this.textureCache.set(path, tex);
           this.texturePromises.delete(path);
+          if (loadUrl !== path) AssetCache.revokeBlobUrl(loadUrl);
           resolve(tex);
         },
         undefined,
         (err) => {
           this.texturePromises.delete(path);
+          if (loadUrl !== path) AssetCache.revokeBlobUrl(loadUrl);
           reject(err);
         },
       );
     });
-    this.texturePromises.set(path, pending);
-    return pending;
   }
 
   /**

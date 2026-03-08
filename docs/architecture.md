@@ -1,10 +1,12 @@
+[← Back to index](/README.md)
+
 # Architecture
 
-This document is the centerpiece of the EV · 2090 documentation. It covers the high-level structure, the critical React-Engine boundary, and the data flows that tie everything together.
+This document is the centerpiece of the EV · 2090 documentation. It covers the high-level structure, the critical React-Engine boundary, the backend Durable Objects, and the data flows that tie everything together.
 
 ## High-level overview
 
-The project is split into two deployable units: a Vite-powered React frontend and a Cloudflare Worker backend. They communicate over HTTP (POST for sending chat messages, SSE for streaming them back)...
+The project is split into four units: a Vite-powered React frontend (the game), an admin dashboard (local dev tool only — not hardened for public deployment), a Cloudflare Worker backend (the brain), and an MCP server (the AI interface). They communicate over HTTP, SSE, and WebSocket.
 
 ```mermaid
 graph LR
@@ -13,23 +15,44 @@ graph LR
     Game["Game.tsx orchestrator"]
     Canvas["GameCanvas.tsx bridge"]
     Engine["Engine.ts game loop"]
-    Systems["systems/ 11 subsystems"]
+    Systems["systems/ subsystems"]
     Entities["entities/ Ship, Planet, NpcShip"]
-    Components["UI: Sidebar, Chat, Config"]
+    Components["UI: Sidebar, Station, Hangar, Chat"]
     Game --> Canvas
     Game --> Components
     Canvas --> Engine
     Engine --> Systems
     Engine --> Entities
   end
-  subgraph Worker ["Worker (Cloudflare)"]
+  subgraph Worker ["Game Worker (Cloudflare)"]
     direction TB
     Index["index.ts routing"]
-    ChatRoom["chat-room.ts Durable Object"]
+    ChatRoom["ChatRoom DO"]
+    BoardRoom["BoardRoom DO"]
+    ShipForge["ShipForge DO"]
+    Economy["EconomyRegion DO"]
+    Admin["Admin API"]
     Index --> ChatRoom
+    Index --> BoardRoom
+    Index --> ShipForge
+    Index --> Economy
+    Index --> Admin
   end
-  Components -->|"HTTP POST"| Index
-  Index -->|"SSE stream"| Components
+  subgraph MCP ["MCP Worker"]
+    direction TB
+    MCPSession["MCPSession DO"]
+    Tools["37 tools"]
+    MCPSession --> Tools
+  end
+  subgraph AdminApp ["Admin Dashboard"]
+    direction TB
+    AdminUI["Economy + 3D Viewer"]
+  end
+  Components -->|"HTTP / SSE"| Index
+  AdminUI -->|"HTTP (Bearer token)"| Index
+  Tools -->|"DO bindings"| Economy
+  Tools -->|"DO bindings"| ChatRoom
+  Tools -->|"service binding"| Index
 ```
 
 ---
@@ -45,7 +68,7 @@ This is the single most important architectural concept in the project. The engi
 3. The engine runs its own `requestAnimationFrame` loop. Every 3rd frame (~20 fps), it calls the subscribe callback with a fresh `GameState` snapshot.
 4. `GameCanvas` forwards that snapshot to `Game.tsx` via the `onStateUpdate` prop, which calls `setGameState(state)`.
 5. React re-renders the HUD panels with the new data.
-6. When the user clicks a button (change ship, jump back, etc.), `Game.tsx` calls methods on `canvasRef.current` -- the imperative handle. Those methods forward directly to the engine.
+6. When the user clicks a button (change ship, dock, trade, etc.), `Game.tsx` calls methods on `canvasRef.current` -- the imperative handle. Those methods forward directly to the engine.
 
 ```mermaid
 graph TD
@@ -73,40 +96,40 @@ This is the **only** way React sends commands to the engine. Every method on thi
 
 | Method | Description |
 |--------|-------------|
-| `changeShip(shipId: string)` | Swap to a different ship model (preserves position and velocity) |
-| `changeShipColor(color: ShipColor)` | Change the ship's texture color |
+| `changeShip(shipId)` | Swap to a different ship model (preserves position and velocity) |
+| `changeShipColor(color)` | Change the ship's texture color |
 | `jumpBack()` | Teleport to the nearest planet |
-| `setSidebarWidthPx(px: number)` | Tell the engine the sidebar pixel width so the camera centers the ship in the playable area |
+| `setSidebarWidthPx(px)` | Tell the engine the sidebar pixel width so the camera centers the ship |
+| `enterDock(planet)` | Initiate docking sequence at a planet |
+| `exitDock()` | Undock and resume gameplay |
 
 ### Camera commands
 
 | Method | Description |
 |--------|-------------|
-| `setZoom(factor: number)` | Set camera zoom level |
-| `getZoom(): number` | Read current zoom |
+| `setZoom(factor)` | Set camera zoom level |
+| `getZoom()` | Read current zoom |
 | `setCameraOffset(x, y)` | Set manual camera offset |
-| `getCameraOffset(): { x, y }` | Read current camera offset |
+| `getCameraOffset()` | Read current camera offset |
 
 ### Debug commands
 
 | Method | Description |
 |--------|-------------|
-| `setDebugView(view: DebugView)` | Switch camera mode: `"normal"`, `"top"`, or `"orbit"` |
-| `getDebugView(): DebugView` | Read current camera mode |
-| `setBeamVisible(visible: boolean)` | Show or hide the scan beam line |
-| `isBeamVisible(): boolean` | Check scan beam visibility |
+| `setDebugView(view)` | Switch camera mode: `"normal"`, `"side"`, `"iso"`, `"orbit"`, `"fpv"` |
+| `getDebugView()` | Read current camera mode |
+| `setBeamVisible(visible)` | Show or hide the scan beam line |
 | `spawnTestShip()` | Spawn a frozen NPC near the player |
 | `spawnTestRing()` | Spawn 4 test ships in a ring around the player |
-| `clearTestShips()` | Remove all test ships (IDs starting with `"test-"`) |
-| `onReady(cb: () => void)` | Register a callback fired ~800ms after engine mount |
+| `clearTestShips()` | Remove all test ships |
 
 ### Config queries
 
 | Method | Description |
 |--------|-------------|
-| `getLightConfig(): LightConfig \| null` | Read current lighting setup for the debug panel |
+| `getLightConfig()` | Read current lighting setup for the debug panel |
 | `updateLight(lightName, property, value)` | Tweak a light property in real time |
-| `updateShipMaterial(property, value)` | Tweak ship material properties (metalness, roughness, emissive) |
+| `updateShipMaterial(property, value)` | Tweak ship material properties |
 
 ---
 
@@ -131,39 +154,106 @@ graph TB
     Engine --> Sound["SoundManager"]
     Engine --> Models["ModelCache"]
     Engine --> PlanetTex["PlanetTextureGen"]
+    Engine --> PostFx["PostProcessing"]
+    Engine --> Hero["HeroCamera"]
+    Engine --> HardEd["HardpointEditor"]
 ```
 
 ### The four planets
 
-The solar system contains four procedurally-textured planets created in the constructor:
-
-| Name   | Radius | Texture style | Atmosphere color |
-|--------|--------|--------------|-----------------|
-| Nexara | 6      | Earth (image) | Blue-teal |
-| Velkar | 4      | Mars (generated) | Orange-red |
-| Zephyra | 9     | Neptune (generated) | Light blue |
-| Arctis | 2      | Luna (generated) | Grey |
+| Name   | Radius | Economy Type | Atmosphere |
+|--------|--------|-------------|------------|
+| Nexara | 6      | Trade Hub | Blue-teal |
+| Velkar | 4      | Mining | Orange-red |
+| Zephyra | 9     | Research | Light blue |
+| Arctis | 2      | Industrial | Grey |
 
 ---
 
 ## Game loop order
 
-The engine loop runs every `requestAnimationFrame`. The exact order of operations in `Engine.loop()` is:
+The engine loop runs every `requestAnimationFrame`. The exact order:
 
-1. **Compute delta time** -- clamped to 50ms max to prevent physics explosions after tab-away
+1. **Compute delta time** -- clamped to 50ms max
 2. **FPS counter** -- updates once per second
-3. **Ship update** -- apply thrust, rotation, velocity from `InputManager` state
-4. **Planet update** -- rotate each planet mesh
-5. **NPC update** -- scanner detection, spawning, removal via `NpcManager`
-6. **Debug beam update** -- reposition the scan line visual if visible
-7. **Thruster sound** -- start/stop the thruster audio loop based on thrust state
-8. **Camera target** -- point the camera at the player ship position
-9. **Orbit tracking** -- if in orbit debug view, track the locked NPC or player
-10. **Camera update** -- interpolate camera position and apply offsets
-11. **Starfield update** -- reposition star particles relative to camera
-12. **Nebula update** -- keep the nebula background centered on camera
-13. **Render** -- `renderer.render(scene, camera)`
-14. **State push** -- every 3rd frame, call `onStateUpdate(getGameState())`
+3. **Ship update** -- physics from `InputManager` state
+4. **Planet update** -- rotation
+5. **NPC update** -- scanner detection, spawning, AI
+6. **Debug beam update** -- scan line visual
+7. **Thruster sound** -- start/stop audio loop
+8. **Camera target + update** -- smooth follow with offset
+9. **Starfield + nebula** -- parallax repositioning
+10. **PostProcessing or direct render** -- bloom/vignette if enabled, or plain render
+11. **State push** -- every 3rd frame, push `GameState` to React
+
+---
+
+## Backend architecture
+
+The backend is a single Cloudflare Worker (`ev-2090-ws`) hosting four Durable Objects and an admin API. All traffic enters through `index.ts` which routes to the appropriate handler.
+
+```mermaid
+graph LR
+    Client["Browser / Admin / MCP"] --> Router["index.ts"]
+    Router -->|"/api/chat/*"| Chat["ChatRoom DO"]
+    Router -->|"/api/board/*"| Board["BoardRoom DO"]
+    Router -->|"/api/forge/*"| Forge["ShipForge DO"]
+    Router -->|"/api/market/*"| Econ["EconomyRegion DO"]
+    Router -->|"/api/admin/*"| Admin["admin.ts (Bearer auth)"]
+    Admin --> Econ
+    Forge -->|"queue"| Meshy["MeshyAI polling"]
+    Econ -->|"R2 snapshots"| R2["ev2090-data"]
+    Forge -->|"ship assets"| R2Ships["ev2090-ships"]
+```
+
+### Durable Objects
+
+| DO | Instance | Storage | Alarm | Purpose |
+|----|----------|---------|-------|---------|
+| **ChatRoom** | 1 global | KV (7 messages) | 15s ping | Real-time SSE chat |
+| **BoardRoom** | 1 global | KV (100 notes/planet) | None | Planet community notes |
+| **ShipForge** | 1 global | KV (jobs + ships) | None | AI ship generation pipeline |
+| **EconomyRegion** | 1 per region | SQLite (7 tables) | 60s tick | NPC economy simulation |
+
+### R2 Buckets
+
+| Bucket | Purpose |
+|--------|---------|
+| `ev2090-ships` | Community ship GLB models + thumbnails |
+| `ev2090-data` | Economy snapshots, commodity catalog, price history |
+
+### Secrets
+
+| Secret | Used By | Purpose |
+|--------|---------|---------|
+| `ADMIN_API_KEY` | admin.ts | Bearer token for admin endpoints |
+| `FORGE_API_KEY` | ship-forge.ts | Admin operations on the forge |
+| `MESHY_API_KEY` | ship-forge.ts | MeshyAI 3D model generation |
+| `GEMINI_API_KEY` | ship-forge.ts | Google Gemini image generation |
+| `GROK_API` | ship-forge.ts | xAI Grok prompt enhancement |
+| `MCP_API_KEY` | worker-mcp | Full access MCP tier |
+| `MCP_API_KEY_RW` | worker-mcp | Read/write MCP tier |
+| `MCP_API_KEY_RO` | worker-mcp | Read-only MCP tier |
+| `OAUTH_HMAC_SECRET` | worker-mcp | OAuth code signing |
+
+---
+
+## MCP architecture
+
+The MCP server is a separate Cloudflare Worker (`ev2090-mcp`) that exposes 37 tools to AI assistants like Claude. It connects to the game worker via cross-worker Durable Object bindings and a service binding.
+
+```mermaid
+graph LR
+    Claude["Claude.ai"] -->|"OAuth / API key"| MCP["worker-mcp"]
+    MCP -->|"DO binding"| Econ["EconomyRegion DO"]
+    MCP -->|"DO binding"| Chat["ChatRoom DO"]
+    MCP -->|"DO binding"| Board["BoardRoom DO"]
+    MCP -->|"DO binding"| Forge["ShipForge DO"]
+    MCP -->|"service binding"| Worker["Game Worker (admin API)"]
+    MCP -->|"R2 direct"| R2["ev2090-data / ev2090-ships"]
+```
+
+37 tools across 10 categories: Economy Intelligence, Market Operations, Trade Routes, Disruptions, Forecast, Database, R2 Storage, Ship Forge, Social, Infrastructure. See [mcp-guide.md](./mcp-guide.md) for the full reference.
 
 ---
 
@@ -181,83 +271,118 @@ graph TB
     Game --> Nick["NicknameEditor"]
     Game --> Off["OffscreenIndicators"]
     Game --> Touch["TouchControls"]
+    Game --> Intro["IntroScreen"]
+    Game --> Station["StationPanel / StationOverlay"]
+    Game --> Hangar["HangarOverlay"]
+    Game --> Flash["DockFlash"]
+    Game --> Board["CommunityBoard"]
+    Game --> FPV["FpvConfigPanel"]
+    Game --> Hero["HeroShotPanel"]
+    Game --> Hard["HardpointPanel"]
+    Game --> CargoWarn["CargoWarningModal"]
     SB --> Radar["RadarPanel"]
     SB --> Diag["ShipDiagnosticPanel"]
     SB --> Sel["ShipSelectorPanel"]
-    SB --> Status["ShipStatusPanel"]
-    SB --> Target["TargetPanel"]
-    SB --> Nav["NavigationPanel"]
+    SB --> Cargo["CargoPanel"]
+    Station --> Summary["SummaryPanel"]
+    Station --> Trading["TradingPanel"]
+    Station --> Locked["LockedPanel"]
     LDP --> CS["CollapsibleSection"]
 ```
 
+**Game states:**
+
+| State | What's visible |
+|-------|---------------|
+| `intro` | IntroScreen (first-time ship selection carousel) |
+| `gameplay` | Ship flying, sidebar, radar, chat, offscreen indicators |
+| `docking` | DockFlash, letterbox bars |
+| `docked` | StationPanel (desktop) or StationOverlay (mobile), CommunityBoard |
+| `hangar` | HangarOverlay (ship catalog, forge, detail view) |
+
 **Responsive behavior:**
 
-- **Desktop** (`>1024px`): Sidebar always visible (240px), chat + nickname + jump button shown
-- **iPad/Tablet** (`768-1024px`): Sidebar always visible (200px), chat + nickname shown
-- **Mobile** (`<768px`): No sidebar -- hamburger menu opens a modal with `ShipDiagnosticPanel`, mini radar HUD in corner, touch controls overlay
+- **Desktop** (`>1024px`): Sidebar always visible (240px), station panel with tabs, chat + nickname
+- **iPad** (`768-1024px`): Sidebar always visible (200px), station panel narrower
+- **Mobile** (`<768px`): No sidebar -- hamburger menu, mini radar, touch controls, station as CRT overlay
 
 ---
 
 ## SSE chat data flow
 
-The chat system uses Server-Sent Events for real-time message delivery. The `ChatPanel` component manages the connection.
-
 ```mermaid
 sequenceDiagram
-    participant User as User types message
     participant Chat as ChatPanel
-    participant Vite as Vite Dev Proxy
     participant Worker as index.ts
     participant DO as ChatRoom DO
     participant SSE as SSE Stream
 
     Note over Chat: On mount
-    Chat->>Vite: GET /api/chat/history
-    Vite->>Worker: GET /api/chat/history
-    Worker->>DO: forward to Durable Object
-    DO-->>Chat: JSON array of last 7 messages
+    Chat->>Worker: GET /api/chat/history
+    Worker->>DO: forward
+    DO-->>Chat: JSON array (last 7 messages)
 
-    Chat->>Vite: GET /api/chat/stream
-    Vite->>Worker: GET /api/chat/stream
-    Worker->>DO: forward to Durable Object
+    Chat->>Worker: GET /api/chat/stream
+    Worker->>DO: forward
     DO-->>SSE: open TransformStream
-    SSE-->>Chat: connected comment and history replay
+    SSE-->>Chat: connected + history replay
 
-    Note over User: User sends a message
-    User->>Chat: type + Enter
-    Chat->>Vite: POST /api/chat/message
-    Vite->>Worker: POST /api/chat/message
-    Worker->>DO: forward to Durable Object
-    DO->>DO: store message, trim to last 7
-    DO->>DO: persist to Durable Object storage
-    DO->>SSE: broadcast SSE event to all writers
-    SSE-->>Chat: receive own message, deduplicated by id
+    Note over Chat: User sends message
+    Chat->>Worker: POST /api/chat/message
+    Worker->>DO: forward
+    DO->>DO: store, trim to 7, persist
+    DO->>SSE: broadcast to all writers
+    SSE-->>Chat: receive (deduplicated by id)
 ```
 
-**Key details:**
+---
 
-- In development, Vite proxies `/api/chat/*` to `https://ws.ev2090.com` (configured in `vite.config.ts`). The proxy is specially configured to flush SSE chunks immediately.
-- In production, the frontend hits `https://ws.ev2090.com/api/chat/*` directly.
-- The `VITE_CHAT_API_URL` env var can override both of these for testing.
-- The ChatPanel deduplicates messages by `id` and keeps only the last 7 visible.
-- If the SSE connection drops, the ChatPanel auto-reconnects after 3 seconds.
+## Economy data flow
+
+The economy runs on a 60-second tick inside the `EconomyRegionDO` Durable Object. See [economy-engine.md](./economy-engine.md) for the full deep dive.
+
+```mermaid
+graph TD
+    Alarm["60s alarm tick"] --> Prod["1. Production + consumption"]
+    Prod --> Export["2. External exports (>80% drain)"]
+    Export --> NPC["3. NPC trade simulation"]
+    NPC --> Price["4. Price recalculation (sigmoid)"]
+    Price --> History["5. Record price history (every 5th tick)"]
+    History --> Persist["6. Persist to SQLite"]
+    Persist --> R2["7. Publish R2 snapshot (every 5th tick)"]
+    R2 --> Reschedule["8. Schedule next alarm"]
+
+    MCP["MCP tools"] -.->|"read/write"| Alarm
+    Admin["Admin dashboard"] -.->|"read"| Alarm
+    Frontend["Frontend"] -.->|"read R2 snapshot"| R2
+```
 
 ---
 
 ## Type system
 
-All data flowing from the engine to React passes through a single type: `GameState`, defined in `frontend/src/types/game.ts`.
+All data flowing from the engine to React passes through `GameState`, defined in `frontend/src/types/game.ts`.
 
-```typescript
-interface GameState {
-  ship: ShipState;          // position, velocity, rotation, thrust, shields, armor, fuel
-  navigation: NavigationInfo; // system name, coordinates, nearest planet
-  target: TargetInfo;       // currently null (future: locked target data)
-  radarContacts: RadarContact[]; // planets + NPC ships for the radar panel
-  fps: number;              // frames per second
-  currentShipId: string;    // active ship model id
-  currentShipColor: ShipColor; // active texture color
-}
-```
+The key fields (see `types/game.ts` for the full definition):
 
-Every HUD panel reads from `GameState`. The engine builds a fresh snapshot every 3rd frame inside `getGameState()`. This is the only data contract between the two worlds.
+- `ship: ShipState` -- position, velocity, rotation, thrust, shields, armor, fuel
+- `navigation: NavigationInfo` -- system name, coordinates, nearest planet
+- `target: TargetInfo` -- locked target data
+- `radarContacts: RadarContact[]` -- planets + NPC ships for radar
+- `fps`, `currentShipId`, `currentShipColor`
+- `scene: SceneState` -- "gameplay" | "docked" | "intro" | etc.
+- `dockable: string | null` -- planet id when in docking range
+- `heroLetterbox: number` -- letterbox animation progress (0-1)
+- `dockedPlanet?: string` -- planet id when docked
+
+Every HUD panel reads from `GameState`. The engine builds a fresh snapshot every 3rd frame. This is the only data contract between the two worlds.
+
+---
+
+## Related Docs
+
+- **[engine-guide.md](./engine-guide.md)** -- Engine systems, entities, standalone renderers, game loop
+- **[ui-guide.md](./ui-guide.md)** -- React components, station UI, hangar, responsive design
+- **[backend-guide.md](./backend-guide.md)** -- Worker routing, Durable Objects, CORS, R2
+- **[economy-engine.md](./economy-engine.md)** -- Tick engine, SQLite schema, price curves
+- **[mcp-guide.md](./mcp-guide.md)** -- MCP server, 37 tools, AI economy management
