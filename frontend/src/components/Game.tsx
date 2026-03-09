@@ -51,7 +51,7 @@ import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { INITIAL_GAME_STATE } from "@/types/game";
 import type { GameState, ShipColor } from "@/types/game";
 import type { DebugView } from "@/engine/systems/CameraController";
-import { SHIP_CATALOG, getShipDef } from "@/engine/ShipCatalog";
+import { SHIP_CATALOG, getShipDef, DEFAULT_SHIP_ID } from "@/engine/ShipCatalog";
 import { ModelCache } from "@/engine/systems/ModelCache";
 import { AssetCache } from "@/engine/systems/AssetCache";
 import { API_BASE, LIVE_API_BASE } from "@/config/urls";
@@ -151,11 +151,12 @@ export function Game() {
   const engineReady = useRef(false);
   const canvasRef = useRef<GameCanvasHandle>(null);
 
-  // Intro screen — shown once for first-time visitors
+  // Intro screen — shown once for first-time visitors.
+  // Skipped when a default community ship is configured (new users fly DEFAULT_SHIP_ID directly).
   const [introComplete, setIntroComplete] = useState(() => {
     if (skipLoading) return true; // debug shortcut skips intro
     if (debugScene.current === "intro") return false; // force intro
-    try { return !!localStorage.getItem("ev-ship"); } catch { return false; }
+    try { return !!localStorage.getItem("ev-ship") || !!DEFAULT_SHIP_ID; } catch { return false; }
   });
 
   // Station/dock state
@@ -295,16 +296,18 @@ export function Game() {
   }, []);
 
   // Start the quest timer only after the intro screen is dismissed.
-  // Also restore the player's saved ship from localStorage (if any).
+  // Restores saved ship from localStorage, or falls back to DEFAULT_SHIP_ID for new users.
   useEffect(() => {
     if (introComplete) {
       canvasRef.current?.startQuest();
-      // Restore saved ship — community ships are already in the catalog
-      // (auto-restored from localStorage by ShipCatalog module init).
       try {
-        const savedShipId = localStorage.getItem("ev-ship");
+        const savedShipId = localStorage.getItem("ev-ship") ?? DEFAULT_SHIP_ID ?? null;
         if (savedShipId) {
           canvasRef.current?.changeShip(savedShipId);
+          // Persist the default so future visits restore it without re-applying
+          if (!localStorage.getItem("ev-ship")) {
+            try { localStorage.setItem("ev-ship", savedShipId); } catch { /* blocked */ }
+          }
         }
       } catch { /* blocked */ }
     }

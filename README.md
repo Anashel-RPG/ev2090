@@ -14,6 +14,36 @@ Behind the scenes, a living economy simulates production, consumption, and NPC t
 
 The codebase spans four workspaces with a regular structure. Every engine system follows the same pattern. Every Durable Object follows the same pattern. Once you understand one, you understand them all.
 
+## Documentation
+
+You do not need to read everything. Pick the guide that matches what you are working on.
+
+### Start here
+- **[Architecture](docs/architecture.md)** -- big picture, key diagrams, data flow
+- **[AI Guide](docs/ai.md)** -- using AI coding assistants with this codebase
+
+### Frontend
+- **[Engine Guide](docs/engine-guide.md)** -- 3D layer: systems, entities, game loop, shaders
+- **[UI Guide](docs/ui-guide.md)** -- React components: sidebar, station, hangar, responsive design
+
+### Backend
+- **[Backend Guide](docs/backend-guide.md)** -- Backend Worker, Durable Objects, routing
+- **[Economy Engine](docs/economy-engine.md)** -- tick engine, SQLite schema, price curves, warmup
+- **[NPC Economy](docs/npc-economy.md)** -- NPC hauler brain, trade routes, sawtooth patterns
+
+### Extra Tools
+- **[Ship Forge](docs/forge-guide.md)** -- Ship Creation pipeline
+- **[Admin Guide](docs/admin-guide.md)** -- admin dashboard (economy monitoring)
+- **[MCP Guide](docs/mcp-guide.md)** -- MCP server, AI-assisted economy management
+
+### Deployment & tooling
+- **[Cloudflare Setup](docs/cloudflare-setup.md)** -- deploying your own instance from scratch
+- **[Self-Hosting](docs/self-hosting.md)** -- running without Cloudflare (workerd, Docker, VPS)
+- **[Dev Tools](docs/dev-tools.md)** -- config panel, debug commands, authoring tools
+- **[Recipes](docs/recipes.md)** -- how to add systems, entities, components, routes (Warning; untested)
+- **[Security](docs/security.md)** -- security model, keys, CORS, rate limiting
+
+
 ## Tech Stack
 
 | Layer     | Technology                     | Version |
@@ -45,33 +75,35 @@ The codebase spans four workspaces with a regular structure. Every engine system
 
 ## Getting Started
 
+Two commands. That's it.
+
+```bash
+npm install
+npm run dev
+```
+
+`npm install` sets up all four workspaces. `npm run dev` starts the frontend, the local worker, and the admin dashboard — and **automatically seeds the NPC economy after 8 seconds** so you have live trade data from the moment the page loads. No API keys, no `.env` files, no Cloudflare account required.
+
+| URL | What's there |
+|-----|-------------|
+| `http://localhost:5180` | The game — fly ships, dock, trade |
+| `http://localhost:5181` | Admin dashboard — 3D trade route viewer, economy overview |
+| `http://localhost:8787` | Local worker API |
+
+The game runs in **no-auth mode** by default: all admin routes are open and the economy is fully functional with locally seeded data. You can explore the entire game engine without touching any configuration.
+
+Advanced configuration (AI ship forge, custom API keys, deploying your own Cloudflare infrastructure) is covered in [CLAUDE.md](CLAUDE.md) and [docs/cloudflare-setup.md](docs/cloudflare-setup.md) when you're ready for it.
+
 ### Prerequisites
 
 - Node.js 18+
 
-### Install
+### Run independently
 
 ```bash
-npm install
-```
-
-This installs all workspace dependencies (frontend + worker).
-
-### Development
-
-```bash
-npm run dev
-```
-
-Starts both services concurrently:
-- **Frontend** on `http://localhost:5180`
-- **Worker** on `http://localhost:8787`
-
-You can also run them independently:
-
-```bash
-npm run dev:frontend   # frontend only
-npm run dev:api        # worker only
+npm run dev:frontend   # frontend only — API proxied to production ws.ev2090.com
+npm run dev:api        # local worker only
+npm run dev:admin      # admin dashboard only
 ```
 
 ### Deploy
@@ -170,34 +202,6 @@ The backend follows the same principle -- a small number of repeating patterns:
 3. **Every admin endpoint** follows: validate Bearer token → call DO → return JSON.
 4. **All state** is dual: in-memory (fast) + SQLite/R2 (durable). Always update both.
 
-## Documentation
-
-You do not need to read everything. Pick the guide that matches what you are working on.
-
-### Start here
-- **[Architecture](docs/architecture.md)** -- big picture, key diagrams, data flow
-- **[AI Guide](docs/ai.md)** -- using AI coding assistants with this codebase
-
-### Frontend
-- **[Engine Guide](docs/engine-guide.md)** -- 3D layer: systems, entities, game loop, shaders
-- **[UI Guide](docs/ui-guide.md)** -- React components: sidebar, station, hangar, responsive design
-
-### Backend
-- **[Backend Guide](docs/backend-guide.md)** -- Backend Worker, Durable Objects, routing
-- **[Economy Engine](docs/economy-engine.md)** -- tick engine, SQLite schema, price curves, warmup
-- **[NPC Economy](docs/npc-economy.md)** -- NPC hauler brain, trade routes, sawtooth patterns
-
-### Extra Tools
-- **[Ship Forge](docs/forge-guide.md)** -- Ship Creation pipeline
-- **[Admin Guide](docs/admin-guide.md)** -- admin dashboard (economy monitoring)
-- **[MCP Guide](docs/mcp-guide.md)** -- MCP server, AI-assisted economy management
-
-### Deployment & tooling
-- **[Cloudflare Setup](docs/cloudflare-setup.md)** -- deploying your own instance from scratch
-- **[Self-Hosting](docs/self-hosting.md)** -- running without Cloudflare (workerd, Docker, VPS)
-- **[Dev Tools](docs/dev-tools.md)** -- config panel, debug commands, authoring tools
-- **[Recipes](docs/recipes.md)** -- how to add systems, entities, components, routes (Warning; untested)
-- **[Security](docs/security.md)** -- security model, keys, CORS, rate limiting
 
 ## AI-Assisted Development
 

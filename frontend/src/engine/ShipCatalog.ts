@@ -195,6 +195,39 @@ function restoreCommunityShips(): void {
 // Auto-restore on module load so ships are in catalog before Engine starts
 restoreCommunityShips();
 
+/** The default community ship — pre-registered so it's available without a network fetch. */
+export const DEFAULT_SHIP_ID = "54a5dd76-3810-4df3-a6e0-4cd222470e78";
+
+// Pre-register the default community ship if it wasn't restored from localStorage
+if (!COMMUNITY_SHIPS.some(s => s.id === DEFAULT_SHIP_ID)) {
+  COMMUNITY_SHIPS.push({
+    id: DEFAULT_SHIP_ID,
+    name: "CSV Rusty Hauler",
+    class: "COURIER",
+    modelPath: `${ASSET_BASE}/forge/${DEFAULT_SHIP_ID}/model.glb`,
+    texturePath: "",
+    stats: { speed: 6, armor: 7, cargo: 9, firepower: 5 },
+    lore: "Budget bulk freighter. Hull shows micrometeor scars, paint flaked to primer. Reliable, if unglamorous.",
+    source: "community",
+    thumbnailUrl: `${ASSET_BASE}/forge/${DEFAULT_SHIP_ID}/thumb.jpg`,
+    heroUrl: `${ASSET_BASE}/forge/${DEFAULT_SHIP_ID}/hero.jpg`,
+    creator: "Anashel",
+    prompt: "A low budget cargo ship. Rectangle, no detail, limited information, clearly used. Single seat.",
+    modelScale: 1.12,
+    defaultHardpoints: [
+      { type: "thruster", localX: -1.01, localY: -0.02, localZ: 0.01, label: "engine", thrustAngleDeg: -90 },
+    ],
+    materialConfig: {
+      metalness: 0.69,
+      roughness: 1,
+      emissiveIntensity: 0.13,
+      emissiveR: 18,
+      emissiveG: 22,
+      emissiveB: 38,
+    },
+  });
+}
+
 /** Register a community ship (called from React layer via GameCanvasHandle) */
 export function registerCommunityShip(def: ShipDef): void {
   const existing = COMMUNITY_SHIPS.findIndex(s => s.id === def.id);

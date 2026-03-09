@@ -229,6 +229,21 @@ export const SHIP_CONFIG_OVERRIDES: Record<string, Partial<Pick<ShipDef, "modelS
       emissiveB: 38,
     },
   },
+  // CSV Rusty Hauler — default player ship, single side-thruster at -90°
+  "54a5dd76-3810-4df3-a6e0-4cd222470e78": {
+    modelScale: 1.12,
+    defaultHardpoints: [
+      { type: "thruster", localX: -1.01, localY: -0.02, localZ: 0.01, label: "engine", thrustAngleDeg: -90 },
+    ],
+    materialConfig: {
+      metalness: 0.69,
+      roughness: 1,
+      emissiveIntensity: 0.13,
+      emissiveR: 18,
+      emissiveG: 22,
+      emissiveB: 38,
+    },
+  },
   // Cyclope — dual-thruster community ship (heading 90° for visual orientation)
   "6d9808fc-a412-456c-b000-e98145eb9bb1": {
     modelScale: 2.5,

@@ -244,7 +244,7 @@ export const INITIAL_GAME_STATE: GameState = {
   target: null,
   radarContacts: [],
   fps: 0,
-  currentShipId: "striker",
+  currentShipId: "54a5dd76-3810-4df3-a6e0-4cd222470e78",
   currentShipColor: "Blue",
   dockable: null,
   docked: false,
